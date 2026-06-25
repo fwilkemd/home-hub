@@ -11,7 +11,7 @@ import { useState } from 'react'
 import { KINDS } from './calendarConfig.js'
 import { parseDateKey, addDays, dateKey } from './dateUtils.js'
 
-export default function EventEditor({ mode, draft, calendars, onSave, onDelete, onClose }) {
+export default function EventEditor({ mode, draft, calendars, closing, onSave, onDelete, onClose }) {
   const [form, setForm] = useState(draft)
   const [confirmDel, setConfirmDel] = useState(false)
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
@@ -42,7 +42,7 @@ export default function EventEditor({ mode, draft, calendars, onSave, onDelete, 
   }
 
   return (
-    <div className="cal-editor" role="dialog" aria-label={mode === 'edit' ? 'Edit event' : 'New event'}>
+    <div className={`cal-editor${closing ? ' is-closing' : ''}`} role="dialog" aria-label={mode === 'edit' ? 'Edit event' : 'New event'}>
       <div className="cal-editor-head">
         <span className="cal-editor-kicker">{mode === 'edit' ? 'Edit' : 'New event'}</span>
       </div>

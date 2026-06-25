@@ -37,12 +37,13 @@ export default function TurningRoom() {
   const [elapsed, setElapsed] = useState(0) // whole seconds into the current track
   const [clock, setClock] = useState(() => new Date())
 
-  // The depth axis: is the legible calendar layer raised over the room?
-  const [calOpen, setCalOpen] = useState(false)
-  const calOpenRef = useRef(false)
-  calOpenRef.current = calOpen
-  const openCal = useCallback(() => setCalOpen(true), [])
-  const closeCal = useCallback(() => setCalOpen(false), [])
+  // The depth axis: the legible calendar raised over the room. We keep it mounted
+  // through its exit so it can fall back down — a bare unmount would pop away.
+  const [calMounted, setCalMounted] = useState(false) // in the DOM (open OR leaving)
+  const [calOpen, setCalOpen] = useState(false) // true = open; false = leaving/closed
+  const calMountedRef = useRef(false)
+  calMountedRef.current = calMounted
+  const closeTimerRef = useRef(null)
 
   // Refs so the single heartbeat always reads current values without resubscribing.
   const idxRef = useRef(idx)
@@ -57,14 +58,30 @@ export default function TurningRoom() {
 
   const track = TRACKS[trackIdx]
 
-  // Return focus to the room when the calendar drops away (not on first mount).
+  const openCal = useCallback(() => {
+    clearTimeout(closeTimerRef.current)
+    setCalMounted(true)
+    setCalOpen(true)
+  }, [])
+  const closeCal = useCallback(() => {
+    setCalOpen(false) // play the fall…
+    lastTurnRef.current = nowMs() // …and give the room a fresh rest on Day when it returns
+    if (reduced) {
+      setCalMounted(false)
+      return
+    }
+    clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = setTimeout(() => setCalMounted(false), 380)
+  }, [reduced])
+
+  // Return focus to the room once the calendar has fully dropped away.
   useEffect(() => {
     if (firstCalRef.current) {
       firstCalRef.current = false
       return
     }
-    if (!calOpen) roomRef.current?.focus?.()
-  }, [calOpen])
+    if (!calMounted) roomRef.current?.focus?.()
+  }, [calMounted])
 
   // --- the turn ---------------------------------------------------------------
   const turnTo = useCallback(
@@ -113,10 +130,10 @@ export default function TurningRoom() {
         setElapsed(elapsedRef.current)
       }
 
-      // While the calendar is raised, keep the light alive (clock + track drift
-      // above still run) but never auto-turn the room underneath it — so dropping
-      // the calendar always lands on the Day wall you left it on.
-      if (calOpenRef.current) return
+      // While the calendar is raised (or leaving), keep the light alive (clock +
+      // track drift above still run) but never auto-turn the room underneath it —
+      // so dropping the calendar always lands on the Day wall you left it on.
+      if (calMountedRef.current) return
 
       // Turn on its own once the room has rested long enough.
       if (nowMs() - lastTurnRef.current >= theme.turnMs) {
@@ -134,7 +151,7 @@ export default function TurningRoom() {
   const onPointerUp = (e) => {
     const d = downRef.current
     downRef.current = null
-    if (!d || calOpen) return // calendar owns gestures while it's up
+    if (!d || calMounted) return // calendar owns gestures while it's up (or leaving)
     const dx = e.clientX - d.x
     const dy = e.clientY - d.y
     // Pull up on the Day wall to raise the calendar (vertical-dominant).
@@ -151,7 +168,7 @@ export default function TurningRoom() {
 
   // --- keyboard: arrows / space, for accessibility ----------------------------
   const onKeyDown = (e) => {
-    if (calOpen) return // calendar handles its own keys while it's up
+    if (calMounted) return // calendar handles its own keys while it's up (or leaving)
     if (e.key === 'ArrowUp' && ORDER[idx] === 'day') {
       e.preventDefault()
       openCal() // pull the calendar up from the Day wall
@@ -180,11 +197,11 @@ export default function TurningRoom() {
       <div
         className="room"
         ref={roomRef}
-        tabIndex={calOpen ? -1 : 0}
+        tabIndex={calMounted ? -1 : 0}
         role="group"
         aria-label="Turning room. Tap, swipe, or use arrow keys to turn."
-        aria-hidden={calOpen || undefined}
-        style={calOpen ? { pointerEvents: 'none' } : undefined}
+        aria-hidden={calMounted || undefined}
+        style={calMounted ? { pointerEvents: 'none' } : undefined}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onKeyDown={onKeyDown}
@@ -202,8 +219,9 @@ export default function TurningRoom() {
         )}
       </div>
 
-      {/* The legible layer — a sibling of the room, lit by the same music. */}
-      {calOpen && <CalendarLayer onClose={closeCal} reduced={reduced} clock={clock} />}
+      {/* The legible layer — a sibling of the room, lit by the same music.
+          Stays mounted through its fall-away exit (open=false) before unmounting. */}
+      {calMounted && <CalendarLayer open={calOpen} onClose={closeCal} reduced={reduced} clock={clock} />}
     </Stage>
   )
 }

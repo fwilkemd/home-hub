@@ -73,17 +73,19 @@ function draftFromEvent(ev) {
   }
 }
 
-export default function CalendarLayer({ onClose, clock }) {
+export default function CalendarLayer({ open, onClose, clock }) {
   const { events, calendars, visible, addEvent, updateEvent, removeEvent, toggleCalendar } = useCalendarStore()
 
   const [view, setView] = useState('week') // "the full week" is the legible layer's home
   const [cursor, setCursor] = useState(() => startOfDay(new Date()))
   const [editing, setEditing] = useState(null) // { mode, draft, key }
+  const [editorClosing, setEditorClosing] = useState(false) // play the sheet's slide-out
 
   const panelRef = useRef(null)
   const downRef = useRef(null)
   const suppressClickRef = useRef(false)
   const editSeqRef = useRef(0)
+  const editorTimerRef = useRef(null)
 
   useEffect(() => {
     panelRef.current?.focus()
@@ -96,22 +98,36 @@ export default function CalendarLayer({ onClose, clock }) {
     setCursor(day)
     setView('day')
   }
+  const startEditing = (next) => {
+    clearTimeout(editorTimerRef.current)
+    setEditorClosing(false)
+    setEditing(next)
+  }
   const openCreate = (day, mins) =>
-    setEditing({ mode: 'create', draft: draftForCreate(day ?? cursor, mins), key: `new-${editSeqRef.current++}` })
-  const openEdit = (ev) => setEditing({ mode: 'edit', draft: draftFromEvent(ev), key: `edit-${ev.id}` })
-  const closeEditor = () => setEditing(null)
+    startEditing({ mode: 'create', draft: draftForCreate(day ?? cursor, mins), key: `new-${editSeqRef.current++}` })
+  const openEdit = (ev) => startEditing({ mode: 'edit', draft: draftFromEvent(ev), key: `edit-${ev.id}` })
+  // Slide the sheet out, then unmount — a bare unmount would pop.
+  const closeEditor = () => {
+    setEditorClosing(true)
+    clearTimeout(editorTimerRef.current)
+    editorTimerRef.current = setTimeout(() => {
+      setEditing(null)
+      setEditorClosing(false)
+    }, 220)
+  }
   const saveEvent = (event) => {
     if (event.id) updateEvent(event.id, event)
     else addEvent(event)
-    setEditing(null)
+    closeEditor()
   }
   const deleteEvent = (id) => {
     removeEvent(id)
-    setEditing(null)
+    closeEditor()
   }
 
   // ── calendar-mode gesture router ────────────────────────────────────────────
   const onPointerDown = (e) => {
+    if (!open) return // leaving — ignore input
     // A fresh gesture starts: clear any leftover suppression so a previous swipe
     // can only ever swallow its OWN trailing click, never a later tap. (On touch
     // a committed swipe emits no click, so the flag would otherwise stick.)
@@ -124,7 +140,7 @@ export default function CalendarLayer({ onClose, clock }) {
   const onPointerUp = (e) => {
     const d = downRef.current
     downRef.current = null
-    if (!d || editing) return
+    if (!d || editing || !open) return
     const dx = e.clientX - d.x
     const dy = e.clientY - d.y
     const scrollTop = d.scrollEl ? d.scrollEl.scrollTop : 0
@@ -150,6 +166,7 @@ export default function CalendarLayer({ onClose, clock }) {
   }
 
   const onKeyDown = (e) => {
+    if (!open) return // leaving — ignore input
     // Lightweight focus trap so Tab stays within the layer.
     if (e.key === 'Tab') {
       // While the editor sheet is open it's the modal — trap Tab within it, not
@@ -222,13 +239,13 @@ export default function CalendarLayer({ onClose, clock }) {
 
   return (
     <div
-      className="cal-scrim"
+      className={`cal-scrim${open ? '' : ' is-closing'}`}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
+        if (open && e.target === e.currentTarget) onClose()
       }}
     >
       <div
-        className="cal-panel"
+        className={`cal-panel${open ? '' : ' is-closing'}`}
         ref={panelRef}
         tabIndex={-1}
         role="dialog"
@@ -256,22 +273,25 @@ export default function CalendarLayer({ onClose, clock }) {
         />
 
         <div className="cal-body">
-          {view === 'month' && (
-            <MonthView
-              cursor={cursor}
-              events={events}
-              visible={visible}
-              onCreate={(day) => openCreate(day, null)}
-              onPickEvent={openEdit}
-              onPickDay={pickDay}
-            />
-          )}
-          {view === 'week' && (
-            <WeekView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} />
-          )}
-          {view === 'day' && (
-            <DayView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} />
-          )}
+          {/* Keyed by view so each switch fades the new view in (no hard cut). */}
+          <div className="cal-view-swap" key={view}>
+            {view === 'month' && (
+              <MonthView
+                cursor={cursor}
+                events={events}
+                visible={visible}
+                onCreate={(day) => openCreate(day, null)}
+                onPickEvent={openEdit}
+                onPickDay={pickDay}
+              />
+            )}
+            {view === 'week' && (
+              <WeekView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} />
+            )}
+            {view === 'day' && (
+              <DayView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} />
+            )}
+          </div>
         </div>
 
         {editing && (
@@ -280,6 +300,7 @@ export default function CalendarLayer({ onClose, clock }) {
             mode={editing.mode}
             draft={editing.draft}
             calendars={calendars}
+            closing={editorClosing}
             onSave={saveEvent}
             onDelete={deleteEvent}
             onClose={closeEditor}

@@ -498,7 +498,9 @@ body {
   --cal-scrim: rgba(7, 5, 14, 0.46);
   --cal-line: rgba(247, 244, 239, 0.1);
   --cal-cell-hi: rgba(247, 244, 239, 0.035);
-  --cal-rise: 420ms;
+  --cal-rise: 560ms; /* panel lift on raise — slower, closer to the room's dissolves */
+  --cal-scrim-fade: 280ms; /* scrim dim/blur fade, kept short (backdrop-blur is costly) */
+  --cal-fall: 340ms; /* panel drop on dismiss */
   --cal-gutter: 6cqw;
 }
 
@@ -508,9 +510,13 @@ body {
   inset: 0;
   z-index: 3;
   background: var(--cal-scrim);
-  -webkit-backdrop-filter: blur(2.2cqw) saturate(108%);
-  backdrop-filter: blur(2.2cqw) saturate(108%);
-  animation: cal-fade var(--cal-rise) ease both;
+  -webkit-backdrop-filter: blur(1.5cqw) saturate(108%);
+  backdrop-filter: blur(1.5cqw) saturate(108%);
+  will-change: opacity;
+  animation: cal-fade var(--cal-scrim-fade) ease both;
+}
+.cal-scrim.is-closing {
+  animation: cal-fade-out var(--cal-scrim-fade) ease both;
 }
 .cal-panel {
   position: absolute;
@@ -526,15 +532,28 @@ body {
   border-radius: 14px;
   box-shadow: 0 2cqh 8cqh rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(247, 244, 239, 0.06),
     0 0 6cqh color-mix(in srgb, var(--a1) 22%, transparent);
+  will-change: transform, opacity;
+  /* The panel lifts up while the scrim dims behind it (the depth move). */
   animation: cal-rise var(--cal-rise) cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.cal-panel.is-closing {
+  animation: cal-fall var(--cal-fall) cubic-bezier(0.4, 0, 0.7, 1) both;
 }
 @keyframes cal-fade {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+@keyframes cal-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
 @keyframes cal-rise {
   from { opacity: 0; transform: translateY(4cqh) scale(0.985); }
   to { opacity: 1; transform: none; }
+}
+@keyframes cal-fall {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(5cqh) scale(0.985); }
 }
 .cal-grab {
   position: relative;
@@ -700,6 +719,16 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+/* Each view settles in on switch (keyed by view in JSX) — softens the hard cut.
+   Starts partly visible (not 0) so a switch never flashes a blank panel. */
+.cal-view-swap {
+  height: 100%;
+  animation: cal-view-in 170ms ease both;
+}
+@keyframes cal-view-in {
+  from { opacity: 0.45; transform: translateY(0.5cqh); }
+  to { opacity: 1; transform: none; }
 }
 
 /* ── month ──────────────────────────────────────────────────────────────── */
@@ -1028,9 +1057,16 @@ body {
   box-shadow: -1cqw 0 4cqw rgba(0, 0, 0, 0.4);
   animation: cal-sheet 280ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
+.cal-editor.is-closing {
+  animation: cal-sheet-out 220ms cubic-bezier(0.4, 0, 0.7, 1) both;
+}
 @keyframes cal-sheet {
-  from { transform: translateX(100%); }
-  to { transform: none; }
+  from { transform: translateX(100%); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes cal-sheet-out {
+  from { transform: none; opacity: 1; }
+  to { transform: translateX(100%); opacity: 0.4; }
 }
 .cal-editor-kicker {
   font-family: var(--font-mono);
