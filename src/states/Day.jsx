@@ -18,7 +18,7 @@ const SLOTS = [
   { left: '52cqw', top: '70cqh', size: 'faint' },
 ]
 
-export default function Day({ today }) {
+export default function Day({ today, onRaise }) {
   return (
     <section className="poster poster-day" aria-label="The day ahead">
       <span className="day-anchor" aria-hidden="true">
@@ -43,6 +43,14 @@ export default function Day({ today }) {
           </div>
         )
       })}
+
+      {/* The one new mark on the ambient layer: pull up here for the full week. */}
+      {onRaise && (
+        <button type="button" className="day-raise" onClick={onRaise} aria-label="Open the week calendar">
+          <span className="day-raise-label">the week</span>
+          <span className="day-raise-arrow" aria-hidden="true">↑</span>
+        </button>
+      )}
     </section>
   )
 }
