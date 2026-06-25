@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Album-art accents. Registering them as <color> custom properties lets the
+  browser *transition* them — this is what makes the whole-screen recolor
+  crossfade smoothly when the now-playing album changes (the signature feature).
+  Defaults are overwritten live from the current mock album's palette.
+*/
+@property --a1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #7c5cff;
+}
+@property --a2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #b98cff;
+}
+@property --a3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #33e0c4;
+}
+
+:root {
+  /* Base canvas — deep dimensional charcoal-plum, not pure black. */
+  --canvas: #141019;
+
+  /* Ink — warm white, plus dim / faint variants. */
+  --ink: #f7f4ef;
+  --ink-dim: rgba(247, 244, 239, 0.66);
+  --ink-faint: rgba(247, 244, 239, 0.4);
+
+  /* Glass surfaces. */
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.22);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Visible keyboard focus everywhere. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Deliberate, smooth, few. Honour reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+}
