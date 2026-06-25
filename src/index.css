@@ -3,41 +3,55 @@
 @tailwind utilities;
 
 /*
-  Album-art accents. Registering them as <color> custom properties lets the
-  browser *transition* them — this is what makes the whole-screen recolor
-  crossfade smoothly when the now-playing album changes (the signature feature).
-  Defaults are overwritten live from the current mock album's palette.
+  ───────────────────────────────────────────────────────────────────────────
+  HOME HUB — the turning room
+  One surface. One state at a time. It turns (dissolves) instead of switching.
+  The whole thing is lit by the now-playing album's colors, always, drifting.
+
+  This file is the one place to restyle: tokens up top, then the light, the
+  turn, and the three poster-states. Aesthetic is intentionally plain in this
+  pass — the behavior is the point.
+  ───────────────────────────────────────────────────────────────────────────
+*/
+
+/*
+  Album-art accents, registered as <color> so the browser can TRANSITION them.
+  This is the mechanism behind the whole-room recolor: change these three and
+  every glow, bloom and accent crossfades to the new track over ~1.8s.
 */
 @property --a1 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #7c5cff;
+  initial-value: #8b5cff;
 }
 @property --a2 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #b98cff;
+  initial-value: #c79bff;
 }
 @property --a3 {
   syntax: '<color>';
   inherits: true;
-  initial-value: #33e0c4;
+  initial-value: #36e6c0;
 }
 
 :root {
-  /* Base canvas — deep dimensional charcoal-plum, not pure black. */
+  /* Base canvas — deep dimensional charcoal-plum, never pure black. */
   --canvas: #141019;
+  --void: #07050c; /* the dark around the screen */
 
-  /* Ink — warm white, plus dim / faint variants. */
+  /* Ink — warm white plus quieter variants. */
   --ink: #f7f4ef;
-  --ink-dim: rgba(247, 244, 239, 0.66);
-  --ink-faint: rgba(247, 244, 239, 0.4);
+  --ink-dim: rgba(247, 244, 239, 0.62);
+  --ink-faint: rgba(247, 244, 239, 0.32);
 
-  /* Glass surfaces. */
-  --glass: rgba(255, 255, 255, 0.06);
-  --glass-strong: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-highlight: rgba(255, 255, 255, 0.22);
+  /* Type roles. */
+  --font-display: 'Fraunces Variable', 'Fraunces', ui-serif, Georgia, serif;
+  --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  /* How long the whole room takes to crossfade to a new track's light. */
+  --recolor: 1800ms;
 }
 
 html,
@@ -48,10 +62,405 @@ body,
 }
 
 body {
-  font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  background: var(--void);
   color: var(--ink);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow: hidden;
+  touch-action: none; /* swipes turn the room; they don't scroll */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── The screen: one 16:10 surface, scaled as a single unit ──────────────── */
+.stage-void {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--void);
+}
+
+.stage {
+  position: relative;
+  width: min(100vw, 160vh); /* 16:10, fit either dimension, never overflow */
+  aspect-ratio: 16 / 10;
+  container-type: size; /* everything inside sizes in cq units → identical at any scale */
+  overflow: hidden;
+  isolation: isolate; /* keep the screen blend-modes to itself */
+  border-radius: 14px;
+  background: var(--canvas);
+  color: var(--ink);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+  /* The signature recolor: when the palette vars change, the room crossfades. */
+  transition: --a1 var(--recolor) ease, --a2 var(--recolor) ease, --a3 var(--recolor) ease;
+}
+
+/* ── Music as light: always on, drifting, behind every state ─────────────── */
+.atmos {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: screen; /* coloured light adds up luminously over the dark canvas */
+  filter: blur(7cqw);
+  will-change: transform, opacity;
+}
+.glow-1 {
+  width: 64cqw;
+  height: 64cqw;
+  left: -8cqw;
+  top: -16cqh;
+  background: radial-gradient(circle at 50% 50%, var(--a1) 0%, transparent 62%);
+  opacity: 0.62;
+  animation: drift-1 26s ease-in-out infinite;
+}
+.glow-2 {
+  width: 56cqw;
+  height: 56cqw;
+  right: -10cqw;
+  top: 4cqh;
+  background: radial-gradient(circle at 50% 50%, var(--a2) 0%, transparent 62%);
+  opacity: 0.55;
+  animation: drift-2 33s ease-in-out infinite;
+}
+.glow-3 {
+  width: 80cqw;
+  height: 80cqw;
+  left: 14cqw;
+  bottom: -34cqh;
+  background: radial-gradient(circle at 50% 50%, var(--a3) 0%, transparent 60%);
+  opacity: 0.5;
+  animation: drift-3 38s ease-in-out infinite;
+}
+
+/* A brighter bloom that breathes, so the light feels like a source, not a wash. */
+.bloom {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    42cqw 38cqw at 40% 44%,
+    color-mix(in srgb, var(--a1) 60%, transparent),
+    transparent 70%
+  );
+  opacity: 0.5;
+  animation: bloom-breathe 15s ease-in-out infinite;
+}
+
+/* Fine grain — kills banding in the big gradients, adds a little life. */
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 170px 170px;
+}
+
+/* Focus the frame. */
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(125% 115% at 50% 42%, transparent 52%, rgba(7, 5, 14, 0.72) 100%);
+}
+
+@keyframes drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(7cqw, 5cqh) scale(1.12); }
+}
+@keyframes drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1.05); }
+  50% { transform: translate(-6cqw, 5cqh) scale(0.94); }
+}
+@keyframes drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(5cqw, -6cqh) scale(1.1); }
+}
+@keyframes bloom-breathe {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.62; transform: scale(1.08); }
+}
+
+/* ── The room + the turn ─────────────────────────────────────────────────── */
+.room {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  outline: none;
+}
+.room:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -5px;
+  border-radius: 14px;
+}
+
+.wall {
+  position: absolute;
+  inset: 0;
+}
+/*
+  The turn is a dissolve THROUGH the atmosphere. The outgoing wall leaves first;
+  the incoming wall holds back a beat, so the middle of the turn is mostly just
+  light — the room rotating to show another wall, not a crossfade between two.
+*/
+.wall-in {
+  animation: wall-in 920ms cubic-bezier(0.2, 0.6, 0.2, 1) 480ms both;
+}
+.wall-out {
+  animation: wall-out 760ms cubic-bezier(0.45, 0, 0.35, 1) both;
+}
+@keyframes wall-in {
+  0% { opacity: 0; transform: scale(1.035); filter: blur(3px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@keyframes wall-out {
+  0% { opacity: 1; transform: scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: scale(1.05); filter: blur(4px); }
+}
+
+.poster {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* ── NOW — time is the hero, the night-shift arrival is the one glowing thing ─ */
+.now-meta {
+  position: absolute;
+  left: 6cqw;
+  top: 8cqh;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.8cqh;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.now-time {
+  position: absolute;
+  left: 4.5cqw;
+  bottom: 5cqh;
+  margin: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.4cqw;
+  font-family: var(--font-display);
+  font-weight: 360;
+  line-height: 0.78;
+  color: var(--ink);
+}
+.now-time-digits {
+  font-size: 38cqh;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0.4cqh 6cqh rgba(0, 0, 0, 0.3);
+}
+.now-colon {
+  color: var(--a1); /* a thread of the music, woven into the time itself */
+  margin: 0 0.4cqw;
+}
+.now-meridiem {
+  font-family: var(--font-mono);
+  font-size: 3.2cqh;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  padding-bottom: 5.5cqh;
+}
+.now-next {
+  position: absolute;
+  right: 6cqw;
+  top: 19cqh;
+  width: 36cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  gap: 0.7cqh;
+}
+.now-next-kicker {
+  font-family: var(--font-mono);
+  font-size: 1.7cqh;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--a3);
+}
+.now-next-label {
+  font-family: var(--font-display);
+  font-size: 6.4cqh;
+  line-height: 1;
+  color: var(--ink);
+  text-shadow: 0 0 7cqh color-mix(in srgb, var(--a1) 75%, transparent);
+}
+.now-next-when {
+  font-family: var(--font-mono);
+  font-size: 1.9cqh;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+}
+
+/* ── MUSIC — the album's world forward: the disc IS the art, the title IS the image ─ */
+.music-disc {
+  position: absolute;
+  right: -22cqw;
+  top: 50%;
+  width: 94cqh;
+  height: 94cqh;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 34%,
+    var(--a2) 0%,
+    var(--a1) 52%,
+    color-mix(in srgb, var(--a1) 45%, #000) 100%
+  );
+  box-shadow: 0 0 18cqh color-mix(in srgb, var(--a1) 55%, transparent),
+    inset 0 0 9cqh rgba(0, 0, 0, 0.4);
+  animation: disc-spin 52s linear infinite;
+}
+.music-disc-core {
+  position: absolute;
+  inset: 37%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2), transparent 60%),
+    color-mix(in srgb, var(--a3) 38%, #0c0a12);
+  box-shadow: inset 0 0 3cqh rgba(0, 0, 0, 0.55);
+}
+@keyframes disc-spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+.music-kicker {
+  position: absolute;
+  left: 6cqw;
+  bottom: 35cqh;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.8cqh;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--a3);
+}
+.music-title {
+  position: absolute;
+  left: 5.5cqw;
+  bottom: 16cqh;
+  margin: 0;
+  max-width: 66cqw;
+  font-family: var(--font-display);
+  font-weight: 380;
+  font-size: 13cqh;
+  line-height: 0.92;
+  color: var(--ink);
+  text-shadow: 0 0.5cqh 8cqh rgba(0, 0, 0, 0.35);
+}
+.music-by {
+  position: absolute;
+  left: 6cqw;
+  bottom: 11cqh;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 2.7cqh;
+  letter-spacing: 0.01em;
+  color: var(--ink-dim);
+}
+.music-dot {
+  color: var(--ink-faint);
+  padding: 0 0.5em;
+}
+.music-progress {
+  position: absolute;
+  left: 6cqw;
+  bottom: 8cqh;
+  width: 42cqw;
+  height: 0.5cqh;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 1cqh;
+  overflow: hidden;
+}
+.music-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 1cqh;
+  background: linear-gradient(90deg, var(--a3), var(--a2));
+  box-shadow: 0 0 2cqh var(--a2);
+  transition: width 1000ms linear; /* glides between the 1s heartbeats */
+}
+
+/* ── DAY — an editorial spread, never a list ─────────────────────────────── */
+.day-anchor {
+  position: absolute;
+  right: 2cqw;
+  bottom: -10cqh;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 80cqh;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  opacity: 0.06; /* texture, not information */
+}
+.day-kicker {
+  position: absolute;
+  left: 7cqw;
+  top: 7cqh;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.8cqh;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.day-event {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5cqh;
+}
+.day-time {
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+}
+.day-label {
+  font-family: var(--font-display);
+  color: var(--ink);
+  line-height: 0.98;
+}
+.day-sub {
+  font-family: var(--font-body);
+  color: var(--ink-faint);
+}
+
+/* scale tiers — deliberate contrast, no two events the same weight */
+.day-faint { opacity: 0.5; }
+.day-faint .day-time { font-size: 1.5cqh; }
+.day-faint .day-label { font-size: 2.8cqh; }
+.day-faint .day-sub { font-size: 1.5cqh; }
+
+.day-whisper .day-time { font-size: 1.7cqh; }
+.day-whisper .day-label { font-size: 3.6cqh; }
+.day-whisper .day-sub { font-size: 1.7cqh; }
+
+.day-hero { width: 48cqw; }
+.day-hero .day-time {
+  font-size: 2.2cqh;
+  letter-spacing: 0.12em;
+  color: var(--a3);
+}
+.day-hero .day-label {
+  font-size: 8.6cqh;
+  color: var(--ink);
+  text-shadow: 0 0 8cqh color-mix(in srgb, var(--a1) 72%, transparent);
+}
+.day-hero .day-sub {
+  font-size: 2.4cqh;
+  color: var(--ink-dim);
 }
 
 /* Visible keyboard focus everywhere. */
@@ -61,12 +470,15 @@ body {
   border-radius: 6px;
 }
 
-/* Deliberate, smooth, few. Honour reduced-motion. */
+/*
+  Reduced motion: no auto-drift, frozen light, instant turns. The room still
+  withholds and still composes — it just doesn't move on its own.
+*/
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    transition-duration: 0.001ms !important;
-    animation-duration: 0.001ms !important;
+    animation: none !important;
+    transition-duration: 1ms !important;
   }
 }
