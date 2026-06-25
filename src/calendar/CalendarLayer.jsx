@@ -112,6 +112,10 @@ export default function CalendarLayer({ onClose, clock }) {
 
   // ── calendar-mode gesture router ────────────────────────────────────────────
   const onPointerDown = (e) => {
+    // A fresh gesture starts: clear any leftover suppression so a previous swipe
+    // can only ever swallow its OWN trailing click, never a later tap. (On touch
+    // a committed swipe emits no click, so the flag would otherwise stick.)
+    suppressClickRef.current = false
     if (editing) return
     const zone = e.target.closest?.('[data-dismiss-zone]') ? 'chrome' : 'body'
     const scrollEl = e.target.closest?.('[data-scroll]') || null
@@ -148,7 +152,10 @@ export default function CalendarLayer({ onClose, clock }) {
   const onKeyDown = (e) => {
     // Lightweight focus trap so Tab stays within the layer.
     if (e.key === 'Tab') {
-      const nodes = panelRef.current?.querySelectorAll(
+      // While the editor sheet is open it's the modal — trap Tab within it, not
+      // the whole panel (the grid behind it stays visible but must not catch focus).
+      const scope = (editing && panelRef.current?.querySelector('.cal-editor')) || panelRef.current
+      const nodes = scope?.querySelectorAll(
         'button, input, textarea, select, [tabindex]:not([tabindex="-1"])',
       )
       const list = Array.from(nodes || []).filter((el) => !el.disabled && el.offsetParent !== null)

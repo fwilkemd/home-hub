@@ -866,7 +866,9 @@ body {
   flex: 0 0 auto;
   min-height: 4.4cqh;
   max-height: 11cqh;
-  overflow: hidden;
+  overflow-y: auto; /* if a day stacks many all-day events, the extras stay reachable */
+  overflow-x: hidden;
+  scrollbar-width: none;
   border-bottom: 1px solid var(--cal-line);
 }
 .cal-allday-label {
@@ -906,6 +908,13 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   touch-action: pan-y;
+  scrollbar-width: none; /* a classic scrollbar would steal width from the body */
+}
+/* columns below this width stay aligned with the day headers above on every engine */
+.cal-grid-scroll::-webkit-scrollbar,
+.cal-allday::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 .cal-grid {
   position: relative;

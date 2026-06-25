@@ -83,6 +83,31 @@ function persistSoon() {
 // Lock in the seed immediately so a reload before any edit still finds it.
 if (seededFresh) persistNow()
 
+// Best-effort flush when the tablet backgrounds or reloads, so an edit made in
+// the last 250ms (still inside the debounce window) is never lost. Wrapped so a
+// locked-down kiosk still never throws.
+function flushNow() {
+  try {
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+  } catch {
+    /* no-op */
+  }
+  persistNow()
+}
+if (typeof window !== 'undefined') {
+  try {
+    window.addEventListener('pagehide', flushNow)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushNow()
+    })
+  } catch {
+    /* no-op */
+  }
+}
+
 function commit(next) {
   state = next
   persistSoon()
