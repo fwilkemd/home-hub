@@ -70,3 +70,59 @@ body {
     animation-duration: 0.001ms !important;
   }
 }
+
+/* ===========================================================================
+   LIVING SCENE — atmosphere
+   The album's light is never quite still. A few huge soft glows drift on long,
+   offset cycles; the music's "sun" breathes; the day's text floats as one. All
+   of it freezes politely under prefers-reduced-motion (handled above).
+   =========================================================================== */
+
+@keyframes drift-a {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(64px, -46px, 0) scale(1.12); }
+}
+@keyframes drift-b {
+  0%   { transform: translate3d(0, 0, 0) scale(1.06); }
+  100% { transform: translate3d(-58px, 44px, 0) scale(1); }
+}
+@keyframes drift-c {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(42px, 52px, 0) scale(1.1); }
+}
+
+/* The album "sun" — the music made into a light source — breathes slowly. */
+@keyframes sun-breathe {
+  0%, 100% { transform: scale(1);    opacity: 0.9; }
+  50%      { transform: scale(1.05); opacity: 1; }
+}
+
+/* The day's arc floats as one, barely. */
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+/* First-paint reveal — text drifts up into the space. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* The clock colon keeps a slow heartbeat. */
+@keyframes colon-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.38; }
+}
+
+/* Now-playing equaliser — built from form, never an emoji. */
+@keyframes eq-bar {
+  0%, 100% { transform: scaleY(0.34); }
+  50%      { transform: scaleY(1); }
+}
+
+/* Film grain, so the light reads as dimensional rather than flat. */
+.scene-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
