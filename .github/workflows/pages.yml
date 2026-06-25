@@ -1,0 +1,50 @@
+# Builds the hub and publishes it to GitHub Pages so it can be opened on a real
+# device (phone / laptop) with a real GPU — the faithful way to judge the motion.
+# `configure-pages` with enablement:true turns Pages on automatically, so no
+# manual repo setting is needed. Live at: https://fwilkemd.github.io/home-hub/
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ['claude/turning-room-music-5uxojn']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Build (with the Pages base path)
+        run: npm run build
+        env:
+          GH_PAGES: 'true'
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
