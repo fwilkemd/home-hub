@@ -48,3 +48,8 @@ export function decideCalGesture({ dx, dy, startZone, scrollTop = 0 }) {
 export function isRaiseGesture(dx, dy) {
   return dy < GESTURE.RAISE_DY && Math.abs(dy) > Math.abs(dx) * GESTURE.AXIS_DOMINANCE
 }
+
+/** Pull DOWN — the mirror of the raise — to bring the shared notes board down. */
+export function isPullDownGesture(dx, dy) {
+  return dy > -GESTURE.RAISE_DY && Math.abs(dy) > Math.abs(dx) * GESTURE.AXIS_DOMINANCE
+}

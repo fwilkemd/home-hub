@@ -3,8 +3,10 @@
 ## What we're building
 A wall-mounted **home hub**: a beautiful, touch-friendly dashboard that runs
 full-screen in a tablet's browser (kiosk mode) on the wall of Forrest & Katie's
-apartment. Target device: **Amazon Fire HD 10 — 1280×800 logical (16:10),
-landscape.**
+apartment. Target device: **Samsung Galaxy Tab (S-series) with the S Pen —
+~16:10, landscape** (e.g. Tab S9, 2560×1600). The stylus matters: notes are
+hand-scribbled with pressure. Authored at a 16:10 logical canvas and scaled as
+one unit, so it stays identical across the Galaxy Tab line.
 
 At a glance it shows:
 - Time + date

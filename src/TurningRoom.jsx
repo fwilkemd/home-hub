@@ -7,8 +7,9 @@ import Day from './states/Day.jsx'
 import CalendarLayer from './calendar/CalendarLayer.jsx'
 import CatchInput from './playground/CatchInput.jsx'
 import Mind from './playground/Mind.jsx'
+import NotesBoard from './playground/NotesBoard.jsx'
 import { motesStore } from './playground/motesStore.js'
-import { isRaiseGesture } from './calendar/gestures.js'
+import { isRaiseGesture, isPullDownGesture } from './calendar/gestures.js'
 import { TRACKS, TODAY } from './data/mock.js'
 import { theme } from './theme.js'
 
@@ -55,6 +56,14 @@ export default function TurningRoom() {
   catchingRef.current = !!catching
   const holdTimerRef = useRef(null)
 
+  // Playground: the shared notes board, pulled down from the top of the room.
+  const [notesMounted, setNotesMounted] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
+  const notesMountedRef = useRef(false)
+  notesMountedRef.current = notesMounted
+  const notesCloseTimerRef = useRef(null)
+  const firstNotesRef = useRef(true)
+
   // Refs so the single heartbeat always reads current values without resubscribing.
   const idxRef = useRef(idx)
   idxRef.current = idx
@@ -84,6 +93,22 @@ export default function TurningRoom() {
     closeTimerRef.current = setTimeout(() => setCalMounted(false), 380)
   }, [reduced])
 
+  const openNotes = useCallback(() => {
+    clearTimeout(notesCloseTimerRef.current)
+    setNotesMounted(true)
+    setNotesOpen(true)
+  }, [])
+  const closeNotes = useCallback(() => {
+    setNotesOpen(false) // play the lift…
+    lastTurnRef.current = nowMs() // …and rest the room when it returns
+    if (reduced) {
+      setNotesMounted(false)
+      return
+    }
+    clearTimeout(notesCloseTimerRef.current)
+    notesCloseTimerRef.current = setTimeout(() => setNotesMounted(false), 380)
+  }, [reduced])
+
   // Return focus to the room once the calendar has fully dropped away.
   useEffect(() => {
     if (firstCalRef.current) {
@@ -92,6 +117,15 @@ export default function TurningRoom() {
     }
     if (!calMounted) roomRef.current?.focus?.()
   }, [calMounted])
+
+  // Same, for the notes board.
+  useEffect(() => {
+    if (firstNotesRef.current) {
+      firstNotesRef.current = false
+      return
+    }
+    if (!notesMounted) roomRef.current?.focus?.()
+  }, [notesMounted])
 
   // --- the turn ---------------------------------------------------------------
   const turnTo = useCallback(
@@ -143,7 +177,7 @@ export default function TurningRoom() {
       // While the calendar is raised (or leaving), keep the light alive (clock +
       // track drift above still run) but never auto-turn the room underneath it —
       // so dropping the calendar always lands on the Day wall you left it on.
-      if (calMountedRef.current || catchingRef.current) return
+      if (calMountedRef.current || catchingRef.current || notesMountedRef.current) return
 
       // Turn on its own once the room has rested long enough.
       if (nowMs() - lastTurnRef.current >= theme.turnMs) {
@@ -180,7 +214,7 @@ export default function TurningRoom() {
   // --- touch / pointer: tap advances, swipe turns, press-and-hold catches -----
   const downRef = useRef(null)
   const onPointerDown = (e) => {
-    if (calMounted || catching) return
+    if (calMounted || notesMounted || catching) return
     downRef.current = { x: e.clientX, y: e.clientY }
     const pt = ptToPct(e.clientX, e.clientY)
     setPressPoint(pt)
@@ -200,12 +234,17 @@ export default function TurningRoom() {
     setPressPoint(null)
     const d = downRef.current
     downRef.current = null
-    if (!d || calMounted || catching) return // calendar / catch own gestures while up
+    if (!d || calMounted || notesMounted || catching) return // other layers own gestures while up
     const dx = e.clientX - d.x
     const dy = e.clientY - d.y
     // Pull up on the Day wall to raise the calendar (vertical-dominant).
     if (ORDER[idx] === 'day' && isRaiseGesture(dx, dy)) {
       openCal()
+      return
+    }
+    // Pull down anywhere to bring the shared notes board down.
+    if (isPullDownGesture(dx, dy)) {
+      openNotes()
       return
     }
     if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy)) {
@@ -221,13 +260,16 @@ export default function TurningRoom() {
 
   // --- keyboard: arrows / space, for accessibility ----------------------------
   const onKeyDown = (e) => {
-    if (calMounted || catching) return // calendar / catch handle their own keys
+    if (calMounted || notesMounted || catching) return // other layers handle their own keys
     if (e.key === 'c' || e.key === 'C') {
       e.preventDefault()
       beginCatch({ xPct: 50, yPct: 42 }) // catch a thought from the keyboard
     } else if (e.key === 'ArrowUp' && ORDER[idx] === 'day') {
       e.preventDefault()
       openCal() // pull the calendar up from the Day wall
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      openNotes() // pull the shared notes board down
     } else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
       e.preventDefault()
       turnBy(1)
@@ -253,11 +295,11 @@ export default function TurningRoom() {
       <div
         className="room"
         ref={roomRef}
-        tabIndex={calMounted ? -1 : 0}
+        tabIndex={calMounted || notesMounted ? -1 : 0}
         role="group"
         aria-label="Turning room. Tap, swipe, or use arrow keys to turn."
-        aria-hidden={calMounted || undefined}
-        style={calMounted ? { pointerEvents: 'none' } : undefined}
+        aria-hidden={calMounted || notesMounted || undefined}
+        style={calMounted || notesMounted ? { pointerEvents: 'none' } : undefined}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -287,12 +329,23 @@ export default function TurningRoom() {
       )}
       {catching && <CatchInput xPct={catching.xPct} yPct={catching.yPct} onCommit={commitCatch} onCancel={cancelCatch} />}
 
-      {/* Caught thoughts live here, always glanceable (hidden under the calendar). */}
-      {!calMounted && <Mind />}
+      {/* A quiet handle at the top: pull down (or tap) for the shared notes board. */}
+      {!calMounted && !notesMounted && !catching && (
+        <button type="button" className="notes-handle" onClick={openNotes} aria-label="Open the shared notes board">
+          <span className="notes-handle-arrow" aria-hidden="true">↓</span>
+          <span className="notes-handle-label">notes</span>
+        </button>
+      )}
+
+      {/* Caught thoughts live here, always glanceable (hidden under a raised layer). */}
+      {!calMounted && !notesMounted && <Mind />}
 
       {/* The legible layer — a sibling of the room, lit by the same music.
           Stays mounted through its fall-away exit (open=false) before unmounting. */}
       {calMounted && <CalendarLayer open={calOpen} onClose={closeCal} reduced={reduced} clock={clock} />}
+
+      {/* The shared notes board — pulled down from the top, lifted back to close. */}
+      {notesMounted && <NotesBoard open={notesOpen} onClose={closeNotes} />}
     </Stage>
   )
 }
