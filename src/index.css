@@ -1050,6 +1050,103 @@ body {
   box-shadow: 0 0 1.6cqh var(--a1);
 }
 
+/* ── events have weight: lift-to-drag, grip-to-resize, conflict nudge ────── */
+.cal-block.is-weighable {
+  cursor: grab;
+}
+.cal-block.is-weighable:active {
+  cursor: grabbing;
+}
+.cal-block.is-source {
+  opacity: 0.32; /* the live one is the floating ghost */
+}
+.cal-block.is-nudged {
+  outline: 1.5px solid var(--a2);
+  outline-offset: -1px;
+  z-index: 4;
+  animation: cal-nudge 0.42s ease-in-out infinite;
+}
+@keyframes cal-nudge {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-0.6cqw); }
+  75% { transform: translateX(0.6cqw); }
+}
+/* the bottom resize grip */
+.cal-block-grip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.7cqh;
+  cursor: ns-resize;
+  touch-action: none;
+}
+.cal-block-grip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0.3cqh;
+  transform: translateX(-50%);
+  width: 3cqw;
+  height: 0.35cqh;
+  border-radius: 1cqh;
+  background: rgba(247, 244, 239, 0.55);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.cal-block:hover .cal-block-grip::after {
+  opacity: 1;
+}
+/* the lifted block's ghost, floating over the whole grid */
+.cal-ghost {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: 6;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1cqh;
+  min-height: 1.6cqh;
+  padding: 0.3cqh 0.5cqw;
+  overflow: hidden;
+  border-left: 0.5cqw solid var(--chip);
+  border-radius: 0.7cqh;
+  background: color-mix(in srgb, var(--chip) 52%, var(--cal-panel));
+  color: var(--ink);
+  box-shadow: 0 1.8cqh 4.5cqh rgba(0, 0, 0, 0.55), 0 0 3cqh color-mix(in srgb, var(--a2) 55%, transparent);
+  transform: scale(1.02);
+}
+
+/* undo toast for a move/resize (forgiving sandbox — undo everything) */
+.cal-undo {
+  position: absolute;
+  left: 50%;
+  bottom: 3cqh;
+  transform: translateX(-50%);
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 1.4cqw;
+  padding: 1.2cqh 2cqw;
+  border-radius: 3cqh;
+  background: color-mix(in srgb, var(--canvas) 80%, #000);
+  border: 1px solid rgba(247, 244, 239, 0.16);
+  box-shadow: 0 1cqh 4cqh rgba(0, 0, 0, 0.5);
+  font-family: var(--font-body);
+  font-size: 1.9cqh;
+  color: var(--ink-dim);
+  animation: catch-card-in 240ms ease both;
+}
+.cal-undo button {
+  background: transparent;
+  border: 0;
+  color: var(--a1);
+  font-family: var(--font-body);
+  font-size: 1.9cqh;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* ── event editor (side sheet) ──────────────────────────────────────────── */
 .cal-editor {
   position: absolute;

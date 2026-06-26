@@ -102,6 +102,8 @@ export default function CalendarLayer({ open, onClose, clock, initialView = 'wee
   const [editorClosing, setEditorClosing] = useState(false) // play the sheet's slide-out
   const [taskEditing, setTaskEditing] = useState(null) // task editor: { mode, draft, key }
   const [taskEditorClosing, setTaskEditorClosing] = useState(false)
+  const [weightUndo, setWeightUndo] = useState(null) // { id, prev } after a drag/resize
+  const weightTimerRef = useRef(null)
 
   const panelRef = useRef(null)
   const downRef = useRef(null)
@@ -147,6 +149,22 @@ export default function CalendarLayer({ open, onClose, clock, initialView = 'wee
     removeEvent(id)
     closeEditor()
   }
+
+  // Drag/resize commit, with an undo (events are forgiving — law: undo everything).
+  const reschedule = (id, start, end) => {
+    const ev = events.find((e) => e.id === id)
+    if (!ev) return
+    updateEvent(id, { start, end })
+    setWeightUndo({ id, prev: { start: ev.start, end: ev.end } })
+    clearTimeout(weightTimerRef.current)
+    weightTimerRef.current = setTimeout(() => setWeightUndo(null), 5000)
+  }
+  const undoReschedule = () => {
+    if (weightUndo) updateEvent(weightUndo.id, weightUndo.prev)
+    clearTimeout(weightTimerRef.current)
+    setWeightUndo(null)
+  }
+  useEffect(() => () => clearTimeout(weightTimerRef.current), [])
 
   // ── task editor (its own sheet, same slide-in/out as the event editor) ──────
   const startTaskEditing = (next) => {
@@ -348,10 +366,10 @@ export default function CalendarLayer({ open, onClose, clock, initialView = 'wee
               />
             )}
             {view === 'week' && (
-              <WeekView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} />
+              <WeekView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} onReschedule={reschedule} />
             )}
             {view === 'day' && (
-              <DayView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} />
+              <DayView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} onReschedule={reschedule} />
             )}
             {view === 'tasks' && (
               <TasksView cursor={cursor} clock={clock} onCreate={openTaskCreate} onPickTask={openTaskEdit} />
@@ -384,6 +402,15 @@ export default function CalendarLayer({ open, onClose, clock, initialView = 'wee
             onDeleteSeries={deleteTaskSeries}
             onClose={closeTaskEditor}
           />
+        )}
+
+        {weightUndo && (
+          <div className="cal-undo" role="status">
+            <span>Moved</span>
+            <button type="button" onClick={undoReschedule}>
+              Undo
+            </button>
+          </div>
         )}
       </div>
     </div>

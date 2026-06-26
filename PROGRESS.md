@@ -79,3 +79,33 @@ the frame in; manual override persists across reload; reduced-motion forces calm
 even with the override set to lively.
 
 ---
+
+## 3. EVENTS HAVE WEIGHT — drag / resize / nudge / undo ✅ DONE
+
+**What shipped** (calendar week + day grid)
+- **Long-press to lift** a single-day block (300ms) → it gains scale + shadow
+  (weight) and a **ghost** follows the pointer; drag to a new time and/or **day**
+  (week), drop to reschedule. Snaps to 15 min, clamped inside the day.
+- **Resize** by dragging the block's **bottom grip** — changes duration (snap 15,
+  min length), clamped to the day.
+- **Conflict nudge**: while dragging, any block the lifted event would overlap
+  visibly nudges (shake + album-ring).
+- **Undo** toast after every move/resize restores the previous start/end
+  (forgiving sandbox). Persists through the calendar store.
+- **Disjoint by design**: a finger that just slides is a scroll, a quick release
+  is tap-to-edit; only a deliberate hold lifts. The grip is a dedicated target.
+  Gestures starting on a block don't page the calendar (they stop propagation).
+  Gated to single-day timed events — all-day spans and night-float shifts stay
+  edit-only.
+
+**Files** — New: `src/calendar/weight.js` (pure geometry/rules). Edited:
+`TimeGrid.jsx` (lift/drag/resize/ghost/nudge), `WeekView/DayView.jsx`
+(`onReschedule` pass-through), `CalendarLayer.jsx` (reschedule + undo toast),
+`index.css`.
+
+**Verified (Playwright, 1280×800, reduced-motion, 19/19 green, 0 console errors)**
+pure geometry unit checks; ghost follows the lift; overlapping blocks nudge mid-
+drag; drop reschedules (9a–3p → 10:30a–4:30p); undo restores; grip-resize changes
+duration (→ 9a–4p) and persists across reload.
+
+---

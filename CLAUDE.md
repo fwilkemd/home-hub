@@ -139,6 +139,10 @@ The grammar is **small and consistent** so nothing conflicts.
   add, tap a task to edit, delete asks "just this day" vs "delete series". The
   overdue **signal** is the only part that reaches the ambient face — it surfaces
   on the **Now** wall (tap it → opens Tasks; the check there clears the glow).
+- **Events have weight** (week/day grid): **long-press a block to lift it**, drag
+  to a new time/day, or drag the **bottom grip** to resize; overlaps nudge; an
+  **undo** toast follows. Hold-to-lift keeps it disjoint from scroll (immediate
+  drag) and tap-to-edit (quick release).
 
 **Catch a thought — motes + the "mind" (press & hold):**
 - **Press-and-hold anywhere** in the room (460ms; moving >10px cancels → it was a
@@ -242,6 +246,12 @@ The grammar is **small and consistent** so nothing conflicts.
   timed task slips past its due time unchecked, it surfaces on the **Now** wall as
   the single glowing concern ("Roo · unfed · 5:12") — check it off from anywhere
   to clear it; several overdue shows the most urgent + a quiet "+N more".
+- ✓ **Events have weight** — in the calendar week/day grid, **long-press a
+  single-day block to lift it** (ghost follows the pointer), drag to a new
+  time/day, or drag the **bottom grip** to resize duration; overlapping blocks
+  **nudge**; every move/resize offers **undo**. Snaps to 15 min. Disjoint from
+  scroll/page/tap (hold-to-lift; grip is a dedicated target). All-day + night-float
+  shifts stay edit-only. (`src/calendar/weight.js` + `TimeGrid.jsx`.)
 - ✓ **Calm ↔ lively dial** — one control (bottom-left: calm · auto · lively)
   scales the whole room's energy through `--motion` / `--lum` / `--veil` on
   `.stage`: motion speed, glow brightness, vignette/density, and the auto-turn
@@ -252,10 +262,8 @@ The grammar is **small and consistent** so nothing conflicts.
 ## What's next (in priority order — see PLAYGROUND.md for rationale)
 1. **Wire-it-up automations** — drag a thread from a trigger ("Forrest home 7:12")
    to an action ("kitchen → warm", "play Slow Tide"); later real Home Assistant.
-2. **Events have weight** — pick up / fling calendar blocks to reschedule
-   (`moveEvent` exists; drag-to-move was deferred as the gnarliest gesture).
-3. **Voice capture** — speak a thought into a mote.
-4. **Fling a mote onto a day** — throw a caught thought straight onto the calendar.
+2. **Voice capture** — speak a thought into a mote.
+3. **Fling a mote onto a day** — throw a caught thought straight onto the calendar.
 - Smaller: calendar `+N more` for stacked all-day events; on-device perf mode (the
   always-on `backdrop-filter` blur is the heaviest thing on weak GPUs).
 

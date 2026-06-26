@@ -127,11 +127,10 @@ gesture on an existing state over a new surface).
   `--motion` / `--lum` / `--veil` on `.stage`. Auto by time of day; manual override
   sticks (`homehub.mood.v1`); reduced motion forces calm. The explicit resolution
   of the ADHD↔autism tension, agency in each person's hands.
-- **Events have weight** *(planned)* — pick up / toss calendar blocks to
-  reschedule; pinch to stretch duration; conflicts visibly nudge. The calendar
-  store already has `moveEvent`; drag-to-move was deferred as the gnarliest
-  gesture (competes with scroll/page/dismiss) — build the pure decision helper
-  first, like `decideCalGesture`, and keep it disjoint from the existing grammar.
+- **Events have weight** *(✓ built)* — long-press a single-day block to lift it
+  (a ghost follows), drag to a new time/day, or drag the bottom grip to resize;
+  overlaps nudge; undo on every change. Pure rules in `calendar/weight.js`; kept
+  disjoint from scroll/page/tap by the hold-to-lift + dedicated-grip pattern.
 - **Voice capture** *(planned, quick)* — speak a thought into a mote (Web Speech
   API), hands-free; great for ADHD. Add as a second input mode in `CatchInput`.
 - **Fling a thought onto a day** *(planned, quick)* — throw a caught mote straight

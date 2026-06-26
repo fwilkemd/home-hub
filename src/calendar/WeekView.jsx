@@ -2,7 +2,7 @@
 import { weekDays } from './dateUtils.js'
 import TimeGrid from './TimeGrid.jsx'
 
-export default function WeekView({ cursor, events, visible, clock, onCreate, onPickEvent }) {
+export default function WeekView({ cursor, events, visible, clock, onCreate, onPickEvent, onReschedule }) {
   return (
     <TimeGrid
       days={weekDays(cursor)}
@@ -12,6 +12,7 @@ export default function WeekView({ cursor, events, visible, clock, onCreate, onP
       hourCqh={5}
       onCreate={onCreate}
       onPickEvent={onPickEvent}
+      onReschedule={onReschedule}
     />
   )
 }
