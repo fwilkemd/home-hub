@@ -133,8 +133,9 @@ gesture on an existing state over a new surface).
   disjoint from scroll/page/tap by the hold-to-lift + dedicated-grip pattern.
 - **Voice capture** *(planned, quick)* — speak a thought into a mote (Web Speech
   API), hands-free; great for ADHD. Add as a second input mode in `CatchInput`.
-- **Fling a thought onto a day** *(planned, quick)* — throw a caught mote straight
-  from the mind onto the calendar (reuse the note momentum + calendar filing).
+- **Fling a thought onto a day** *(✓ built)* — long-press a caught mote to lift
+  it, then fling it onto the day rail (Today / Tomorrow / Weekend) → files to the
+  calendar. Reuses the catch→file pipeline and the lift grammar.
 - **Automations — "wire it up"** *(planned; the Phase-3 idea)* — drag a glowing
   thread from a trigger ("Forrest home 7:12") to an action ("kitchen → warm",
   "play Slow Tide"). Cause→effect by hand; autism-friendly explicitness. Later

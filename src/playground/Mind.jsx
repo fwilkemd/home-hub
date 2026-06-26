@@ -21,12 +21,24 @@ function dayFor(when) {
   return addDays(base, daysToSat)
 }
 
+// The drop targets when flinging a thought onto a day (same days as the buttons).
+const RAIL = [
+  { when: 'today', label: 'Today' },
+  { when: 'tomorrow', label: 'Tomorrow' },
+  { when: 'weekend', label: 'Weekend' },
+]
+
 export default function Mind() {
   const { motes, update, remove, restore } = useMotes()
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [letGo, setLetGo] = useState(null) // { mote } for the undo toast
+  const [fling, setFling] = useState(null) // { id, text, x, y, ox, oy, target } while flinging a mote
   const undoTimer = useRef(null)
+  const flingRef = useRef(null) // live drag math (no re-render)
+  const flungRef = useRef(false) // suppress the click after a fling
+  const railRef = useRef(null)
+  const overlayRef = useRef(null)
 
   useEffect(() => () => clearTimeout(undoTimer.current), [])
 
@@ -59,6 +71,60 @@ export default function Mind() {
   const toTask = (mote) => {
     tasksStore.addTask({ title: mote.text || 'Thought', assignee: 'anyone' })
     remove(mote.id)
+  }
+
+  // ── fling a thought onto a day ──────────────────────────────────────────
+  // Same grammar as picking up a calendar block: long-press a thought to lift it,
+  // then drag it onto a day on the rail to file it there (reuses file()).
+  const hitTarget = (x, y) => {
+    const root = railRef.current
+    if (!root) return null
+    for (const c of root.querySelectorAll('[data-when]')) {
+      const r = c.getBoundingClientRect()
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return c.getAttribute('data-when')
+    }
+    return null
+  }
+  const onMoteDown = (e, m) => {
+    const g = { id: m.id, text: m.text, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, lifted: false, el: e.currentTarget, holdTimer: null }
+    flingRef.current = g
+    g.holdTimer = setTimeout(() => {
+      if (flingRef.current !== g) return
+      g.lifted = true
+      try {
+        g.el.setPointerCapture(g.pointerId)
+      } catch {
+        /* best effort */
+      }
+      const o = overlayRef.current?.getBoundingClientRect() || { left: 0, top: 0 }
+      setFling({ id: g.id, text: g.text, x: g.startX, y: g.startY, ox: o.left, oy: o.top, target: null })
+    }, 300)
+  }
+  const onMoteMove = (e) => {
+    const g = flingRef.current
+    if (!g) return
+    if (!g.lifted) {
+      if (Math.abs(e.clientX - g.startX) > 8 || Math.abs(e.clientY - g.startY) > 8) {
+        clearTimeout(g.holdTimer)
+        flingRef.current = null
+      }
+      return
+    }
+    e.preventDefault()
+    const target = hitTarget(e.clientX, e.clientY)
+    setFling((f) => (f ? { ...f, x: e.clientX, y: e.clientY, target } : f))
+  }
+  const onMoteUp = (e) => {
+    const g = flingRef.current
+    flingRef.current = null
+    if (!g) return
+    clearTimeout(g.holdTimer)
+    if (!g.lifted) return
+    flungRef.current = true // swallow the trailing click (don't open the editor)
+    const target = hitTarget(e.clientX, e.clientY)
+    const mote = motes.find((m) => m.id === g.id)
+    if (target && mote) file(mote, target)
+    setFling(null)
   }
 
   const drop = (mote) => {
@@ -94,7 +160,7 @@ export default function Mind() {
       </button>
 
       {open && (
-        <div className="mind" onPointerDown={(e) => e.target === e.currentTarget && setOpen(false)}>
+        <div className="mind" ref={overlayRef} onPointerDown={(e) => e.target === e.currentTarget && setOpen(false)}>
           <div className="mind-panel" role="dialog" aria-label="Caught thoughts">
             <div className="mind-head">
               <span className="mind-title">mind</span>
@@ -124,7 +190,22 @@ export default function Mind() {
                         }}
                       />
                     ) : (
-                      <button type="button" className="mote-text" onClick={() => setEditingId(m.id)}>
+                      <button
+                        type="button"
+                        className={`mote-text${fling && fling.id === m.id ? ' is-lifted' : ''}`}
+                        onClick={() => {
+                          if (flungRef.current) {
+                            flungRef.current = false // tail of a fling — not an edit
+                            return
+                          }
+                          setEditingId(m.id)
+                        }}
+                        onPointerDown={(e) => onMoteDown(e, m)}
+                        onPointerMove={onMoteMove}
+                        onPointerUp={onMoteUp}
+                        onPointerCancel={onMoteUp}
+                        title="Tap to edit · press &amp; hold to fling onto a day"
+                      >
                         {m.text || 'Thought'}
                       </button>
                     )}
@@ -150,6 +231,25 @@ export default function Mind() {
               </ul>
             )}
           </div>
+
+          {/* Flinging: the lifted thought follows the finger; drop it on a day. */}
+          {fling && (
+            <>
+              <div className="mind-fling" style={{ left: `${fling.x - fling.ox}px`, top: `${fling.y - fling.oy}px` }}>
+                {fling.text || 'Thought'}
+              </div>
+              <div className="mind-rail" ref={railRef} aria-hidden="true">
+                <span className="mind-rail-label">fling onto a day</span>
+                <div className="mind-rail-chips">
+                  {RAIL.map((r) => (
+                    <div key={r.when} data-when={r.when} className={`mind-rail-chip${fling.target === r.when ? ' is-over' : ''}`}>
+                      {r.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 

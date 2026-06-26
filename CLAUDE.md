@@ -151,8 +151,11 @@ The grammar is **small and consistent** so nothing conflicts.
   flesh — no "+ New".)
 - Caught thoughts live in the **"mind"** (quiet cluster, bottom-right, with a
   count — object permanence). Open it → per thought: **Today / Tomorrow / Weekend**
-  (files it as a real all-day calendar event) or **let go** (with Undo). Tap a
-  thought to edit; `Escape` closes the mind.
+  (files it as a real all-day calendar event), become a **Task**, or **let go**
+  (with Undo). Tap a thought to edit; `Escape` closes the mind.
+- **Fling a thought onto a day:** **long-press a thought to lift it** (same
+  pick-up grammar as a calendar block), then drag it onto the **day rail** that
+  appears (Today / Tomorrow / Weekend) → it files to the calendar there.
 
 **Notes — the shared board (pull DOWN):**
 - Open: swipe **down** from the top of the room / `ArrowDown` / tap the "notes ↓"
@@ -263,7 +266,6 @@ The grammar is **small and consistent** so nothing conflicts.
 1. **Wire-it-up automations** — drag a thread from a trigger ("Forrest home 7:12")
    to an action ("kitchen → warm", "play Slow Tide"); later real Home Assistant.
 2. **Voice capture** — speak a thought into a mote.
-3. **Fling a mote onto a day** — throw a caught thought straight onto the calendar.
 - Smaller: calendar `+N more` for stacked all-day events; on-device perf mode (the
   always-on `backdrop-filter` blur is the heaviest thing on weak GPUs).
 

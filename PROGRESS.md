@@ -109,3 +109,21 @@ drag; drop reschedules (9a–3p → 10:30a–4:30p); undo restores; grip-resize 
 duration (→ 9a–4p) and persists across reload.
 
 ---
+
+## 4. FLING A THOUGHT ONTO A DAY ✅ DONE
+
+**What shipped** — In the mind, **long-press a caught thought to lift it** (same
+grammar as picking up a calendar block), then **fling it onto a day** on a rail
+that appears mid-drag (Today / Tomorrow / Weekend). Drop → it becomes a real
+all-day calendar event on that day, reusing the existing `file()` catch→calendar
+pipeline; the thought leaves the mind. Tap still edits; the per-mote day buttons
+stay as the tap/keyboard fallback. Consistent, additive (no new standalone surface).
+
+**Files** — `playground/Mind.jsx` (lift/fling + day rail), `index.css`.
+
+**Verified (Playwright, 1280×800, reduced-motion, 9/9 green, 0 console errors)**
+catch a thought → it's in the mind → long-press lifts it → rail appears → hovered
+day highlights → drop files a real all-day event on Tomorrow → thought leaves the
+mind.
+
+---

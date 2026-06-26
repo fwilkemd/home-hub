@@ -2329,3 +2329,75 @@ body {
   color: #0c0a12;
   background: linear-gradient(135deg, var(--a2), var(--a1));
 }
+
+/*
+  ───────────────────────────────────────────────────────────────────────────
+  FLING A THOUGHT ONTO A DAY — long-press a mote, drag it onto the day rail
+  Reuses the catch→file pipeline; same "lift then move" grammar as weighted
+  calendar blocks. The rail only appears while a thought is in the air.
+  ───────────────────────────────────────────────────────────────────────────
+*/
+.mote-text.is-lifted {
+  opacity: 0.4; /* the floating clone is the live one */
+}
+.mind-fling {
+  position: absolute;
+  z-index: 8;
+  transform: translate(-50%, -50%) rotate(-3deg);
+  max-width: 30cqw;
+  padding: 1.2cqh 1.6cqw;
+  border-radius: 1cqh;
+  background: color-mix(in srgb, var(--canvas) 72%, #000);
+  border: 1px solid color-mix(in srgb, var(--a2) 45%, rgba(247, 244, 239, 0.16));
+  box-shadow: 0 1.8cqh 5cqh rgba(0, 0, 0, 0.55), 0 0 4cqh color-mix(in srgb, var(--a2) 55%, transparent);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 2cqh;
+  line-height: 1.25;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mind-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4cqh;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1cqh;
+  pointer-events: none; /* hit-testing is by geometry; nothing here steals the pointer */
+  animation: cal-fade 180ms ease both;
+}
+.mind-rail-label {
+  font-family: var(--font-mono);
+  font-size: 1.5cqh;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--a3);
+}
+.mind-rail-chips {
+  display: flex;
+  gap: 1.2cqw;
+}
+.mind-rail-chip {
+  min-width: 14cqw;
+  padding: 1.4cqh 2cqw;
+  border-radius: 1.4cqh;
+  text-align: center;
+  border: 1px solid rgba(247, 244, 239, 0.18);
+  background: color-mix(in srgb, var(--canvas) 78%, #000);
+  color: var(--ink-dim);
+  font-family: var(--font-body);
+  font-size: 1.9cqh;
+  transition: transform 0.18s ease, color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+.mind-rail-chip.is-over {
+  color: #0c0a12;
+  background: linear-gradient(135deg, var(--a2), var(--a1));
+  border-color: transparent;
+  transform: translateY(-0.6cqh) scale(1.06);
+}
