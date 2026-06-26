@@ -1434,6 +1434,46 @@ body {
   text-transform: uppercase;
   color: var(--a3);
 }
+.catch-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.4cqw;
+}
+.catch-speak {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7cqw;
+  min-height: 4.4cqh;
+  padding: 0 1.4cqw;
+  border-radius: 2.4cqh;
+  border: 1px solid rgba(247, 244, 239, 0.18);
+  background: transparent;
+  color: var(--ink-dim);
+  font-family: var(--font-mono);
+  font-size: 1.4cqh;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+.catch-speak-dot {
+  width: 1.1cqh;
+  height: 1.1cqh;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+.catch-speak.is-on {
+  color: #0c0a12;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--a2), var(--a1));
+}
+.catch-speak.is-on .catch-speak-dot {
+  background: #0c0a12;
+  animation: catch-listen 1.1s ease-in-out infinite;
+}
+@keyframes catch-listen {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
 .catch-field {
   font-family: var(--font-display);
   font-size: 5cqh;

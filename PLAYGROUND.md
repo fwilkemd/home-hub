@@ -131,8 +131,9 @@ gesture on an existing state over a new surface).
   (a ghost follows), drag to a new time/day, or drag the bottom grip to resize;
   overlaps nudge; undo on every change. Pure rules in `calendar/weight.js`; kept
   disjoint from scroll/page/tap by the hold-to-lift + dedicated-grip pattern.
-- **Voice capture** *(planned, quick)* — speak a thought into a mote (Web Speech
-  API), hands-free; great for ADHD. Add as a second input mode in `CatchInput`.
+- **Voice capture** *(✓ built)* — a "speak" affordance on the catch card dictates
+  a thought via the Web Speech API; graceful fallback (no button) when absent.
+  `playground/useVoiceCapture.js`.
 - **Fling a thought onto a day** *(✓ built)* — long-press a caught mote to lift
   it, then fling it onto the day rail (Today / Tomorrow / Weekend) → files to the
   calendar. Reuses the catch→file pipeline and the lift grammar.

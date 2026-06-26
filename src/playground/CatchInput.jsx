@@ -8,10 +8,13 @@
   legibility; the pool marks where you touched.
 */
 import { useEffect, useRef, useState } from 'react'
+import { useVoiceCapture } from './useVoiceCapture.js'
 
 export default function CatchInput({ xPct, yPct, onCommit, onCancel }) {
   const [text, setText] = useState('')
   const inputRef = useRef(null)
+  // Dictate instead of type — fills the field with the transcript as you speak.
+  const { supported: voiceOk, listening, start: startVoice, stop: stopVoice } = useVoiceCapture({ onText: setText })
 
   useEffect(() => {
     // Best-effort autofocus; on touch the card is right there to tap if blocked.
@@ -43,7 +46,21 @@ export default function CatchInput({ xPct, yPct, onCommit, onCancel }) {
     >
       <div className="catch-pool" style={{ left: `${xPct}%`, top: `${yPct}%` }} aria-hidden="true" />
       <div className="catch-card" role="dialog" aria-label="Catch a thought" onPointerDown={(e) => e.stopPropagation()}>
-        <span className="catch-label">catch a thought</span>
+        <div className="catch-head">
+          <span className="catch-label">catch a thought</span>
+          {voiceOk && (
+            <button
+              type="button"
+              className={`catch-speak${listening ? ' is-on' : ''}`}
+              onClick={listening ? stopVoice : startVoice}
+              aria-pressed={listening}
+              aria-label={listening ? 'Stop dictation' : 'Dictate a thought'}
+            >
+              <span className="catch-speak-dot" aria-hidden="true" />
+              {listening ? 'listening…' : 'speak'}
+            </button>
+          )}
+        </div>
         <input
           ref={inputRef}
           className="catch-field"

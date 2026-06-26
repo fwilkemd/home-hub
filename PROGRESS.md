@@ -127,3 +127,26 @@ day highlights → drop files a real all-day event on Tomorrow → thought leave
 mind.
 
 ---
+
+## 5. VOICE CAPTURE — dictate a thought ✅ DONE
+
+**What shipped** — A **"speak"** affordance on the catch card (`useVoiceCapture`
+hook over `SpeechRecognition` / `webkitSpeechRecognition`). Tap it → it listens
+(pulsing dot) and fills the field with the live transcript; commit as usual. Fully
+**additive + forgiving**: if the API is unavailable the affordance simply isn't
+shown and typing works unchanged; every call is try/caught so a denied mic never
+throws.
+
+**Files** — New: `playground/useVoiceCapture.js`. Edited: `playground/CatchInput.jsx`,
+`index.css`.
+
+**Verified (Playwright, 1280×800, two contexts, 7/7 green, 0 console errors)**
+*supported* (a mock recognizer): the "speak" button shows, dictation fills the
+field ("water the fern tonight"), the thought commits to the mind. *unsupported*
+(API nulled): no "speak" button, typing still catches a thought. NOTE: real
+dictation needs a mic + the platform speech service, which the headless CI lacks —
+so the engine itself is exercised via a mock; on a real Galaxy Tab the native
+engine drives it. Flagged per the batch's "skip-if-unsupported" rule: kept (the
+graceful path is proven), but the live mic is unverified here.
+
+---

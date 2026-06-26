@@ -156,6 +156,9 @@ The grammar is **small and consistent** so nothing conflicts.
 - **Fling a thought onto a day:** **long-press a thought to lift it** (same
   pick-up grammar as a calendar block), then drag it onto the **day rail** that
   appears (Today / Tomorrow / Weekend) → it files to the calendar there.
+- **Voice capture:** the catch card shows a **speak** button when the browser
+  supports `SpeechRecognition`; tap to dictate (the transcript fills the field).
+  Absent API → no button, typing unchanged. (`playground/useVoiceCapture.js`.)
 
 **Notes — the shared board (pull DOWN):**
 - Open: swipe **down** from the top of the room / `ArrowDown` / tap the "notes ↓"
@@ -265,7 +268,6 @@ The grammar is **small and consistent** so nothing conflicts.
 ## What's next (in priority order — see PLAYGROUND.md for rationale)
 1. **Wire-it-up automations** — drag a thread from a trigger ("Forrest home 7:12")
    to an action ("kitchen → warm", "play Slow Tide"); later real Home Assistant.
-2. **Voice capture** — speak a thought into a mote.
 - Smaller: calendar `+N more` for stacked all-day events; on-device perf mode (the
   always-on `backdrop-filter` blur is the heaviest thing on weak GPUs).
 
