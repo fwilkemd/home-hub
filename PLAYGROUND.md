@@ -114,6 +114,48 @@ Design principles that follow:
 
 (Navigation + gesture details for all three are in CLAUDE.md → "THE GESTURE MAP".)
 
+## The authoritative gesture map (consistency pass — keep this true)
+One small grammar, reused everywhere. **Exactly one layer listens at a time**
+(mounted flags); axes are disjoint; "lift" and "corner control" are shared idioms.
+
+**Ambient room — the three walls (Now / Music / Day):**
+- **Turn:** tap · horizontal swipe · `←/→` · `Space`/`Enter` · auto every ~9s
+  (cadence scales with the mood dial; off under reduced motion).
+- **Catch a thought:** press-and-hold the empty room (460ms; >10px move = a swipe).
+- **Raise the calendar:** on the Day wall, swipe **up** / `ArrowUp` / the "week ↑".
+- **Pull down notes:** swipe **down** / `ArrowDown` / the "notes ↓".
+- **Corner controls** (each swallows its own taps, so they never turn the room):
+  the **mind** (bottom-right), the **mood dial** (bottom-left: calm·auto·lively),
+  and — only when something's overdue — the **Now concern** (tap → Tasks; its
+  check clears the glow).
+
+**Legible layer — the calendar panel (Month / Week / Day / Tasks):**
+- Horizontal swipe = prev/next period (**in Tasks, steps a day**); vertical scrolls
+  the grid; down-drag from the chrome / at scroll-top = dismiss; `Esc`/×/scrim =
+  close; ‹ Today ›; `+`/`n` = new.
+- **Calendar:** tap empty = create · tap event = edit. **Events have weight:**
+  **long-press a single-day block to lift it** → drag to a new time/day; **bottom
+  grip** = resize; overlaps **nudge**; every change offers **undo**.
+- **Tasks:** tap the circle = check off · tap the row = edit · delete asks **"just
+  this day" vs "delete series."**
+
+**The mind (caught thoughts):** tap = edit · per-thought **Today / Tomorrow /
+Weekend / Task / ×** · **long-press a thought to lift it** → **fling onto the day
+rail** (files it to the calendar). Same lift grammar as a calendar block.
+
+**Notes board:** pick the pen (Forrest / Katie) · `+` to scribble (S Pen pressure →
+ink width) · drag/**fling** notes (momentum) · two-tap × = delete · "NEW" glow until
+seen.
+
+**Catch card:** **type or speak** (dictation, when supported) · `Enter`/Catch
+commit · `Esc`/Let go cancel.
+
+**Invariants (every new gesture must keep these):** one layer owns input at a time;
+horizontal (turn/page) vs vertical (raise/pull-down) split by axis dominance;
+**long-press-to-lift** is distinct from tap/scroll via the hold timer + move-cancel;
+corner controls and the Now concern stop their own pointer events; **reduced motion
+freezes motion but every gesture still works.**
+
 ## The backlog (ideas, in build order)
 Pick by value × fit × buildability, and respect subtraction discipline (prefer a
 gesture on an existing state over a new surface).

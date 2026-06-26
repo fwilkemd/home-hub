@@ -150,3 +150,71 @@ engine drives it. Flagged per the batch's "skip-if-unsupported" rule: kept (the
 graceful path is proven), but the live mic is unverified here.
 
 ---
+
+## 6. CONSISTENCY + POLISH + FULL RE-VERIFY ✅ DONE
+
+- **Authoritative gesture map** written into PLAYGROUND.md ("The authoritative
+  gesture map"), covering every surface and the invariants. The grammar unified
+  around two shared idioms: **long-press-to-lift** (calendar blocks *and* flinging
+  motes) and **corner controls that swallow their own taps** (mind, mood dial, and
+  the Now overdue concern).
+- **Reduced motion**: every new feature verified to still *function* with motion
+  frozen (all suites run under `reducedMotion: 'reduce'`); the dial additionally
+  forces calm.
+- **Console**: the full-app run captures **errors AND warnings** — zero of either.
+- **Persistence**: tasks (`homehub.tasks.v1`), mood (`homehub.mood.v1`), plus the
+  existing calendar/motes/notes — all survive reload (spot-checked in the suites).
+
+**Full re-verification (Playwright, 1280×800, reduced-motion, 16/16 green, 0
+console errors/warnings)** — one session exercising EVERY feature with no
+regressions: the turn (Now/Music/Day) · notes open+close · catch→mind · calendar
+create+delete · tasks check-off+create · events-have-weight resize · the mood dial
+(reduced-motion forced calm) · fling a thought onto a day (real event created) ·
+persistence across reload.
+
+---
+
+## MORNING SUMMARY
+
+**Branch / deploy:** all work is on `claude/turning-room-music-5uxojn` (the real
+project), pushed in 6 commits (one per queue item). Pages auto-deploys on push to
+this branch → **https://fwilkemd.github.io/home-hub/**.
+
+**Shipped tonight (all verified with Playwright at 1280×800, zero console
+errors/warnings, reduced-motion safe, persisted):**
+1. **Tasks** — Skylight-simple chores in the legible layer (a "Tasks" view beside
+   Month/Week/Day): per-person groups, one-tap check-off, recurring/one-off, timed/
+   untimed, delete with explicit "just this day" vs "delete series", and the
+   **overdue concern glowing on the Now wall**. A caught thought can become a task.
+2. **Calm↔lively dial** — one corner control scaling the whole room's motion, glow,
+   and density; auto by time, sticky override, reduced-motion forces calm.
+3. **Events have weight** — long-press to lift a calendar block, drag to a new
+   time/day, grip-resize, conflict nudge, undo.
+4. **Fling a thought onto a day** — long-press a mote, fling it onto a day rail →
+   real calendar event.
+5. **Voice capture** — dictate a thought on the catch card; graceful fallback.
+6. **Consistency pass** — authoritative gesture map; full re-verify.
+
+**States / gestures that changed:** the **Now** wall gained the overdue concern;
+the **Day** wall is unchanged but the calendar panel gained a **Tasks** tab and
+**weight** (lift/drag/resize) on blocks; the **mind** gained Task triage + fling;
+the **catch card** gained a speak button; two new corner controls (mood dial) and
+signals (Now concern). New persistence key `homehub.tasks.v1`, `homehub.mood.v1`.
+
+**Skipped / unsure (please review):**
+- **Voice — live mic unverified.** The Web Speech path is exercised via a mock
+  recognizer in CI (no mic/speech service headless). It should work on the Galaxy
+  Tab, but please confirm real dictation on-device.
+- **Touch vs. mouse for lift/drag.** Verified with mouse (CI). On a touch device,
+  the long-press-lift then `preventDefault` to stop scrolling relies on
+  non-passive pointer handlers — worth a quick on-device check that dragging a
+  calendar block / flinging a mote doesn't fight the scroll. (Tap, scroll, and
+  page-swipe are unaffected.)
+- **Automations ("wire it up")** — the remaining backlog item — not attempted
+  (the next-biggest feature; out of tonight's scope after 1–5).
+
+**Recommended next step:** do a 5-minute on-device pass on the real Galaxy Tab
+(landscape, Reduce Motion OFF) focused on the two touch caveats above — real voice
+dictation and drag-vs-scroll — then pick up **wire-it-up automations** as the next
+build.
+
