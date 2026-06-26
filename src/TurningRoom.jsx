@@ -10,6 +10,9 @@ import Mind from './playground/Mind.jsx'
 import NotesBoard from './playground/NotesBoard.jsx'
 import { motesStore } from './playground/motesStore.js'
 import { isRaiseGesture, isPullDownGesture } from './calendar/gestures.js'
+import MoodDial from './room/MoodDial.jsx'
+import { useMood } from './room/useMood.js'
+import { energyFor, energyVars, turnMsFor } from './room/energy.js'
 import { TRACKS, TODAY } from './data/mock.js'
 import { theme } from './theme.js'
 
@@ -32,6 +35,7 @@ const ORDER = ['now', 'music', 'day']
 */
 export default function TurningRoom() {
   const reduced = usePrefersReducedMotion()
+  const { mode: moodMode, setMode: setMoodMode } = useMood()
 
   const [idx, setIdx] = useState(0) // active wall
   const [prevKey, setPrevKey] = useState(null) // outgoing wall during a turn
@@ -77,6 +81,13 @@ export default function TurningRoom() {
   const firstCalRef = useRef(true)
 
   const track = TRACKS[trackIdx]
+
+  // The room's energy (calm↔lively): one scalar that scales motion, glow, and the
+  // auto-turn cadence. A ref keeps the heartbeat reading the latest without
+  // re-subscribing the interval.
+  const energy = energyFor(moodMode, clock, reduced)
+  const energyRef = useRef(energy)
+  energyRef.current = energy
 
   const openCal = useCallback((initial) => {
     // Accepts an optional initial view ('week' | 'tasks' | …). When wired straight
@@ -184,8 +195,8 @@ export default function TurningRoom() {
       // so dropping the calendar always lands on the Day wall you left it on.
       if (calMountedRef.current || catchingRef.current || notesMountedRef.current) return
 
-      // Turn on its own once the room has rested long enough.
-      if (nowMs() - lastTurnRef.current >= theme.turnMs) {
+      // Turn on its own once the room has rested long enough (calmer = lingers).
+      if (nowMs() - lastTurnRef.current >= turnMsFor(energyRef.current, theme.turnMs)) {
         turnTo((idxRef.current + 1) % ORDER.length)
       }
     }, 1000)
@@ -288,6 +299,7 @@ export default function TurningRoom() {
     '--a1': track.palette.a1,
     '--a2': track.palette.a2,
     '--a3': track.palette.a3,
+    ...energyVars(energy),
   }
 
   const progress = Math.min(1, elapsed / track.lenSec)
@@ -344,6 +356,9 @@ export default function TurningRoom() {
 
       {/* Caught thoughts live here, always glanceable (hidden under a raised layer). */}
       {!calMounted && !notesMounted && <Mind />}
+
+      {/* The calm↔lively dial — turn the room's mood. Quiet, in the corner. */}
+      {!calMounted && !notesMounted && !catching && <MoodDial mode={moodMode} setMode={setMoodMode} />}
 
       {/* The legible layer — a sibling of the room, lit by the same music.
           Stays mounted through its fall-away exit (open=false) before unmounting. */}

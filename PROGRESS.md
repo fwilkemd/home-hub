@@ -51,3 +51,31 @@ creates a task due a few minutes ago so it's deterministic regardless of wall-cl
 (seed "Feed Roo" only naturally glows after 5pm).
 
 ---
+
+## 2. CALM ↔ LIVELY DIAL — the room's mood ✅ DONE
+
+**What shipped**
+- One scalar — **energy** (0 calm … 1 lively) — scales the WHOLE room at once via
+  three CSS custom properties written on `.stage`: `--motion` (animation-duration
+  multiplier — calm slower), `--lum` (glow brightness — calm dimmer), `--veil`
+  (vignette — calm closes the frame in). The atmosphere glows/bloom/disc and the
+  auto-turn cadence all read them, so calm genuinely slows + dims + sparsens and
+  lively energizes — across every state, from one control.
+- A quiet **three-stop dial** bottom-left: `calm · auto · lively`, the active stop
+  filled with the album's light (the mood recolors with the music). A mood you
+  turn, not a settings page. It swallows its own pointer events so turning the
+  mood never turns the room.
+- **Auto** follows the time of day (calmest overnight ~0.22, brightest midday
+  ~0.85). A manual **override sticks** (`homehub.mood.v1`). **Reduced motion
+  forces calm** regardless of the dial (and the global CSS already freezes motion).
+
+**Files** — New: `src/room/{energy,moodStore,useMood,MoodDial}.{js,jsx}`.
+Edited: `TurningRoom.jsx` (energy → palette vars + turn cadence + dial),
+`index.css` (atmosphere reads `--motion/--lum/--veil`; dial styles), docs.
+
+**Verified (Playwright, 1280×800, 9/9 green, 0 console errors)** dial present;
+tapping it does NOT turn the room; lively brighter + faster than calm; calm closes
+the frame in; manual override persists across reload; reduced-motion forces calm
+even with the override set to lively.
+
+---

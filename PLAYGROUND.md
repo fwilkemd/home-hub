@@ -122,12 +122,11 @@ gesture on an existing state over a new surface).
   Skylight-simple, with the overdue concern surfacing on the Now wall. Both hooks
   shipped: a caught thought can become a task, and it lives as a section in the
   calendar layer (no new standalone screen). Store: `homehub.tasks.v1`.
-- **The calm ↔ lively dial** *(planned — the sensory frame; earmarked, not built)*
-  — one control (auto by time of day + manual override) that scales the whole
-  room's energy: CALM = slow, dim, sparse, quiet (autism wind-down / Forrest
-  post-shift); LIVELY = brighter, more motion (ADHD novelty). This is the explicit
-  resolution of the core ADHD↔autism tension and hands each person agency — the
-  highest-leverage frame once tasks land.
+- **The calm ↔ lively dial** *(✓ built — see "What's built")* — one control
+  (bottom-left: calm · auto · lively) scaling the whole room's energy via
+  `--motion` / `--lum` / `--veil` on `.stage`. Auto by time of day; manual override
+  sticks (`homehub.mood.v1`); reduced motion forces calm. The explicit resolution
+  of the ADHD↔autism tension, agency in each person's hands.
 - **Events have weight** *(planned)* — pick up / toss calendar blocks to
   reschedule; pinch to stretch duration; conflicts visibly nudge. The calendar
   store already has `moveEvent`; drag-to-move was deferred as the gnarliest

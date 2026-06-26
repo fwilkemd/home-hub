@@ -170,6 +170,10 @@ The grammar is **small and consistent** so nothing conflicts.
   (turn) vs vertical (raise/pull-down) are disjoint by axis dominance; long-press
   is distinct from tap/swipe via the timer + move-cancel. Keep it this way — every
   new gesture must stay disjoint from these.
+- **Corner controls** (the **mind** bottom-right, the **mood dial** bottom-left)
+  are buttons that **swallow their own pointer events**, so tapping them never also
+  turns the room. That's the pattern for any small always-on affordance — and the
+  same trick the Now overdue concern uses.
 
 ## Architecture & file map
 - `src/main.jsx` → `App.jsx` → **`TurningRoom.jsx`** (the orchestrator).
@@ -238,19 +242,20 @@ The grammar is **small and consistent** so nothing conflicts.
   timed task slips past its due time unchecked, it surfaces on the **Now** wall as
   the single glowing concern ("Roo · unfed · 5:12") — check it off from anywhere
   to clear it; several overdue shows the most urgent + a quiet "+N more".
+- ✓ **Calm ↔ lively dial** — one control (bottom-left: calm · auto · lively)
+  scales the whole room's energy through `--motion` / `--lum` / `--veil` on
+  `.stage`: motion speed, glow brightness, vignette/density, and the auto-turn
+  cadence. Auto follows time of day; a manual override sticks (`homehub.mood.v1`);
+  reduced motion forces calm. The explicit ADHD↔autism dial. (`src/room/*`.)
 - ✓ **Deployed** to GitHub Pages, auto-deploys on push to the working branch.
 
 ## What's next (in priority order — see PLAYGROUND.md for rationale)
-1. **The calm ↔ lively dial** — the sensory frame for the ADHD↔autism tension
-   (**earmarked, not built**). One control, auto by time + manual override, scales
-   the whole room's energy: CALM (slow/dim/sparse/quiet) ↔ LIVELY (brighter/more
-   motion). The highest-leverage frame now that tasks have landed.
-2. **Wire-it-up automations** — drag a thread from a trigger ("Forrest home 7:12")
+1. **Wire-it-up automations** — drag a thread from a trigger ("Forrest home 7:12")
    to an action ("kitchen → warm", "play Slow Tide"); later real Home Assistant.
-3. **Events have weight** — pick up / fling calendar blocks to reschedule
+2. **Events have weight** — pick up / fling calendar blocks to reschedule
    (`moveEvent` exists; drag-to-move was deferred as the gnarliest gesture).
-4. **Voice capture** — speak a thought into a mote.
-5. **Fling a mote onto a day** — throw a caught thought straight onto the calendar.
+3. **Voice capture** — speak a thought into a mote.
+4. **Fling a mote onto a day** — throw a caught thought straight onto the calendar.
 - Smaller: calendar `+N more` for stacked all-day events; on-device perf mode (the
   always-on `backdrop-filter` blur is the heaviest thing on weak GPUs).
 

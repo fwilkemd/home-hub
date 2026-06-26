@@ -52,6 +52,13 @@
 
   /* How long the whole room takes to crossfade to a new track's light. */
   --recolor: 1800ms;
+
+  /* The calm↔lively dial writes these on .stage; defaults = a neutral middle so
+     nothing breaks if the dial is absent. --motion scales animation durations
+     (bigger = slower/calmer), --lum scales glow brightness, --veil the vignette. */
+  --motion: 1;
+  --lum: 1;
+  --veil: 0.9;
 }
 
 html,
@@ -112,6 +119,7 @@ body {
   mix-blend-mode: screen; /* coloured light adds up luminously over the dark canvas */
   filter: blur(7cqw);
   will-change: transform, opacity;
+  transition: opacity 1200ms ease; /* mood changes crossfade the brightness */
 }
 .glow-1 {
   width: 64cqw;
@@ -119,8 +127,8 @@ body {
   left: -8cqw;
   top: -16cqh;
   background: radial-gradient(circle at 50% 50%, var(--a1) 0%, transparent 62%);
-  opacity: 0.62;
-  animation: drift-1 26s ease-in-out infinite;
+  opacity: calc(0.62 * var(--lum));
+  animation: drift-1 calc(26s * var(--motion)) ease-in-out infinite;
 }
 .glow-2 {
   width: 56cqw;
@@ -128,8 +136,8 @@ body {
   right: -10cqw;
   top: 4cqh;
   background: radial-gradient(circle at 50% 50%, var(--a2) 0%, transparent 62%);
-  opacity: 0.55;
-  animation: drift-2 33s ease-in-out infinite;
+  opacity: calc(0.55 * var(--lum));
+  animation: drift-2 calc(33s * var(--motion)) ease-in-out infinite;
 }
 .glow-3 {
   width: 80cqw;
@@ -137,8 +145,8 @@ body {
   left: 14cqw;
   bottom: -34cqh;
   background: radial-gradient(circle at 50% 50%, var(--a3) 0%, transparent 60%);
-  opacity: 0.5;
-  animation: drift-3 38s ease-in-out infinite;
+  opacity: calc(0.5 * var(--lum));
+  animation: drift-3 calc(38s * var(--motion)) ease-in-out infinite;
 }
 
 /* A brighter bloom that breathes, so the light feels like a source, not a wash. */
@@ -151,8 +159,9 @@ body {
     color-mix(in srgb, var(--a1) 60%, transparent),
     transparent 70%
   );
-  opacity: 0.5;
-  animation: bloom-breathe 15s ease-in-out infinite;
+  opacity: calc(0.5 * var(--lum));
+  animation: bloom-breathe calc(15s * var(--motion)) ease-in-out infinite;
+  transition: opacity 1200ms ease;
 }
 
 /* Fine grain — kills banding in the big gradients, adds a little life. */
@@ -170,6 +179,8 @@ body {
   position: absolute;
   inset: 0;
   background: radial-gradient(125% 115% at 50% 42%, transparent 52%, rgba(7, 5, 14, 0.72) 100%);
+  opacity: var(--veil, 0.9); /* calm closes the frame in; lively opens it up */
+  transition: opacity 1200ms ease;
 }
 
 @keyframes drift-1 {
@@ -322,7 +333,7 @@ body {
   );
   box-shadow: 0 0 18cqh color-mix(in srgb, var(--a1) 55%, transparent),
     inset 0 0 9cqh rgba(0, 0, 0, 0.4);
-  animation: disc-spin 52s linear infinite;
+  animation: disc-spin calc(52s * var(--motion)) linear infinite;
 }
 .music-disc-core {
   position: absolute;
@@ -2176,4 +2187,48 @@ body {
 @keyframes concern-glow {
   0%, 100% { text-shadow: 0 0 5cqh color-mix(in srgb, var(--a2) 55%, transparent); }
   50% { text-shadow: 0 0 9cqh color-mix(in srgb, var(--a2) 95%, transparent); }
+}
+
+/*
+  ───────────────────────────────────────────────────────────────────────────
+  THE CALM ↔ LIVELY DIAL — the room's mood, bottom-left
+  A quiet three-stop control; the active stop is filled with the album's light
+  (so the current mood recolors with the music). Not a settings page — a mood.
+  ───────────────────────────────────────────────────────────────────────────
+*/
+.mood {
+  position: absolute;
+  left: 3cqw;
+  bottom: 3cqh;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3cqw;
+  padding: 0.5cqh 0.5cqw;
+  border-radius: 3cqh;
+  background: rgba(247, 244, 239, 0.05);
+  border: 1px solid rgba(247, 244, 239, 0.12);
+  opacity: 0.62;
+  transition: opacity 0.3s ease;
+}
+.mood:hover,
+.mood:focus-within {
+  opacity: 1;
+}
+.mood-stop {
+  min-height: 4.2cqh;
+  padding: 0 1.3cqw;
+  border-radius: 2.4cqh;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 1.5cqh;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: color 0.25s ease, background 0.25s ease;
+}
+.mood-stop.is-on {
+  color: #0c0a12;
+  background: linear-gradient(135deg, var(--a2), var(--a1));
 }
