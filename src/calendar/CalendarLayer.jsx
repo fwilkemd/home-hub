@@ -15,7 +15,10 @@ import MonthView from './MonthView.jsx'
 import WeekView from './WeekView.jsx'
 import DayView from './DayView.jsx'
 import EventEditor from './EventEditor.jsx'
+import TasksView from '../tasks/TasksView.jsx'
+import TaskEditor from '../tasks/TaskEditor.jsx'
 import { useCalendarStore } from './useCalendarStore.js'
+import { useTasksStore } from '../tasks/useTasksStore.js'
 import { decideCalGesture } from './gestures.js'
 import { startOfDay, addDays, addWeeks, addMonths, dateKey, parseLocal } from './dateUtils.js'
 
@@ -37,6 +40,22 @@ function draftForCreate(day, mins) {
     kind: 'home',
     note: '',
     important: false,
+  }
+}
+
+// Task editor drafts (a flat, form-shaped view of a task record).
+function taskDraftForCreate() {
+  return { title: '', assignee: 'anyone', timed: false, dueTime: '17:00', recType: 'none', days: [] }
+}
+function taskDraftFromTask(t) {
+  return {
+    id: t.id,
+    title: t.title,
+    assignee: t.assignee,
+    timed: !!t.dueTime,
+    dueTime: t.dueTime || '17:00',
+    recType: t.recurrence?.type || 'none',
+    days: t.recurrence?.days || [],
   }
 }
 
@@ -73,19 +92,23 @@ function draftFromEvent(ev) {
   }
 }
 
-export default function CalendarLayer({ open, onClose, clock }) {
+export default function CalendarLayer({ open, onClose, clock, initialView = 'week' }) {
   const { events, calendars, visible, addEvent, updateEvent, removeEvent, toggleCalendar } = useCalendarStore()
+  const { addTask, updateTask, deleteOccurrence, deleteSeries } = useTasksStore()
 
-  const [view, setView] = useState('week') // "the full week" is the legible layer's home
+  const [view, setView] = useState(initialView) // 'week' is the calendar's home; 'tasks' opens the chore list
   const [cursor, setCursor] = useState(() => startOfDay(new Date()))
-  const [editing, setEditing] = useState(null) // { mode, draft, key }
+  const [editing, setEditing] = useState(null) // calendar event editor: { mode, draft, key }
   const [editorClosing, setEditorClosing] = useState(false) // play the sheet's slide-out
+  const [taskEditing, setTaskEditing] = useState(null) // task editor: { mode, draft, key }
+  const [taskEditorClosing, setTaskEditorClosing] = useState(false)
 
   const panelRef = useRef(null)
   const downRef = useRef(null)
   const suppressClickRef = useRef(false)
   const editSeqRef = useRef(0)
   const editorTimerRef = useRef(null)
+  const taskEditorTimerRef = useRef(null)
 
   useEffect(() => {
     panelRef.current?.focus()
@@ -125,6 +148,37 @@ export default function CalendarLayer({ open, onClose, clock }) {
     closeEditor()
   }
 
+  // ── task editor (its own sheet, same slide-in/out as the event editor) ──────
+  const startTaskEditing = (next) => {
+    clearTimeout(taskEditorTimerRef.current)
+    setTaskEditorClosing(false)
+    setTaskEditing(next)
+  }
+  const openTaskCreate = () =>
+    startTaskEditing({ mode: 'create', draft: taskDraftForCreate(), key: `newtask-${editSeqRef.current++}` })
+  const openTaskEdit = (t) => startTaskEditing({ mode: 'edit', draft: taskDraftFromTask(t), key: `task-${t.id}` })
+  const closeTaskEditor = () => {
+    setTaskEditorClosing(true)
+    clearTimeout(taskEditorTimerRef.current)
+    taskEditorTimerRef.current = setTimeout(() => {
+      setTaskEditing(null)
+      setTaskEditorClosing(false)
+    }, 220)
+  }
+  const saveTask = (task) => {
+    if (task.id) updateTask(task.id, task)
+    else addTask(task)
+    closeTaskEditor()
+  }
+  const deleteTaskOccurrence = (id, key) => {
+    deleteOccurrence(id, key)
+    closeTaskEditor()
+  }
+  const deleteTaskSeries = (id) => {
+    deleteSeries(id)
+    closeTaskEditor()
+  }
+
   // ── calendar-mode gesture router ────────────────────────────────────────────
   const onPointerDown = (e) => {
     if (!open) return // leaving — ignore input
@@ -132,7 +186,7 @@ export default function CalendarLayer({ open, onClose, clock }) {
     // can only ever swallow its OWN trailing click, never a later tap. (On touch
     // a committed swipe emits no click, so the flag would otherwise stick.)
     suppressClickRef.current = false
-    if (editing) return
+    if (editing || taskEditing) return
     const zone = e.target.closest?.('[data-dismiss-zone]') ? 'chrome' : 'body'
     const scrollEl = e.target.closest?.('[data-scroll]') || null
     downRef.current = { x: e.clientX, y: e.clientY, zone, scrollEl }
@@ -140,7 +194,7 @@ export default function CalendarLayer({ open, onClose, clock }) {
   const onPointerUp = (e) => {
     const d = downRef.current
     downRef.current = null
-    if (!d || editing || !open) return
+    if (!d || editing || taskEditing || !open) return
     const dx = e.clientX - d.x
     const dy = e.clientY - d.y
     const scrollTop = d.scrollEl ? d.scrollEl.scrollTop : 0
@@ -171,7 +225,7 @@ export default function CalendarLayer({ open, onClose, clock }) {
     if (e.key === 'Tab') {
       // While the editor sheet is open it's the modal — trap Tab within it, not
       // the whole panel (the grid behind it stays visible but must not catch focus).
-      const scope = (editing && panelRef.current?.querySelector('.cal-editor')) || panelRef.current
+      const scope = ((editing || taskEditing) && panelRef.current?.querySelector('.cal-editor')) || panelRef.current
       const nodes = scope?.querySelectorAll(
         'button, input, textarea, select, [tabindex]:not([tabindex="-1"])',
       )
@@ -194,6 +248,13 @@ export default function CalendarLayer({ open, onClose, clock }) {
       if (e.key === 'Escape') {
         e.preventDefault()
         closeEditor()
+      }
+      return
+    }
+    if (taskEditing) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closeTaskEditor()
       }
       return
     }
@@ -230,7 +291,8 @@ export default function CalendarLayer({ open, onClose, clock }) {
       case 'n':
       case 'N':
         e.preventDefault()
-        openCreate(cursor, null)
+        if (view === 'tasks') openTaskCreate()
+        else openCreate(cursor, null)
         break
       default:
         break
@@ -268,7 +330,7 @@ export default function CalendarLayer({ open, onClose, clock }) {
           onNext={() => step(1)}
           onToday={goToday}
           onToggleCalendar={toggleCalendar}
-          onNew={() => openCreate(cursor, null)}
+          onNew={() => (view === 'tasks' ? openTaskCreate() : openCreate(cursor, null))}
           onClose={onClose}
         />
 
@@ -291,6 +353,9 @@ export default function CalendarLayer({ open, onClose, clock }) {
             {view === 'day' && (
               <DayView cursor={cursor} events={events} visible={visible} clock={clock} onCreate={openCreate} onPickEvent={openEdit} />
             )}
+            {view === 'tasks' && (
+              <TasksView cursor={cursor} clock={clock} onCreate={openTaskCreate} onPickTask={openTaskEdit} />
+            )}
           </div>
         </div>
 
@@ -304,6 +369,20 @@ export default function CalendarLayer({ open, onClose, clock }) {
             onSave={saveEvent}
             onDelete={deleteEvent}
             onClose={closeEditor}
+          />
+        )}
+
+        {taskEditing && (
+          <TaskEditor
+            key={taskEditing.key}
+            mode={taskEditing.mode}
+            draft={taskEditing.draft}
+            dayKey={dateKey(cursor)}
+            closing={taskEditorClosing}
+            onSave={saveTask}
+            onDeleteOccurrence={deleteTaskOccurrence}
+            onDeleteSeries={deleteTaskSeries}
+            onClose={closeTaskEditor}
           />
         )}
       </div>

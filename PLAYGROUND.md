@@ -100,22 +100,28 @@ Design principles that follow:
   color-coded by author, with a "NEW" glow until acknowledged. Files:
   `src/playground/{notesStore,useNotes,InkCanvas,NoteCard,NotesBoard}.*`.
   — Serves: two-hands/one-wall shared memory, creative expression, dynamics/weight.
+- **Tasks — the legible layer's chore list.** A "Tasks" view beside the calendar's
+  Month/Week/Day: grouped by person, one-tap check-off, recurring (daily / weekly /
+  specific weekdays) or one-off, timed or untimed, full create/edit, and delete
+  with the explicit "just this day" vs "delete series" choice. A caught thought can
+  become a task (the mind's fourth triage). The only thing that reaches the ambient
+  face is the **overdue concern** on the **Now** wall — the room responding to an
+  unmet need ("Roo · unfed · 5:12"), most-urgent-first with a quiet "+N more",
+  cleared by checking off from anywhere. Files: `src/tasks/*`
+  (`store,useTasksStore,recurrence,seed,tasksConfig`; `TasksView,TaskRow,TaskEditor,
+  NowConcern`). — Serves: Katie's Skylight-simple guardrail; keep-it-visible; the
+  room reacting only when something is genuinely unmet.
 
-(Navigation + gesture details for both are in CLAUDE.md → "THE GESTURE MAP".)
+(Navigation + gesture details for all three are in CLAUDE.md → "THE GESTURE MAP".)
 
 ## The backlog (ideas, in build order)
 Pick by value × fit × buildability, and respect subtraction discipline (prefer a
 gesture on an existing state over a new surface).
 
-- **Tasks** *(next — the legible layer's other half)* — a real task list with
-  honest CRUD that **persists**, sitting beside the calendar in the legible layer.
-  **Skylight-simple: function wins, dress it lightly** (Katie's guardrail). Two
-  hooks make it ours without breaking subtraction discipline: (1) a **caught
-  thought should be able to become a task**, not just a calendar event (extend the
-  "mind" triage — Today/Tomorrow/Weekend/**Task**); (2) reach it as a
-  gesture/section near the calendar, *not* a brand-new standalone screen. Store
-  follows the existing module-singleton + versioned-`localStorage` pattern
-  (`homehub.tasks.v1`), so the future cloud sync gets it for free.
+- **Tasks** *(✓ built — see "What's built")* — the legible layer's chore list,
+  Skylight-simple, with the overdue concern surfacing on the Now wall. Both hooks
+  shipped: a caught thought can become a task, and it lives as a section in the
+  calendar layer (no new standalone screen). Store: `homehub.tasks.v1`.
 - **The calm ↔ lively dial** *(planned — the sensory frame; earmarked, not built)*
   — one control (auto by time of day + manual override) that scales the whole
   room's energy: CALM = slow, dim, sparse, quiet (autism wind-down / Forrest

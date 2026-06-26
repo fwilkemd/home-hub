@@ -45,6 +45,7 @@ export default function TurningRoom() {
   // through its exit so it can fall back down — a bare unmount would pop away.
   const [calMounted, setCalMounted] = useState(false) // in the DOM (open OR leaving)
   const [calOpen, setCalOpen] = useState(false) // true = open; false = leaving/closed
+  const [calInitialView, setCalInitialView] = useState('week') // which view it opens on
   const calMountedRef = useRef(false)
   calMountedRef.current = calMounted
   const closeTimerRef = useRef(null)
@@ -77,7 +78,11 @@ export default function TurningRoom() {
 
   const track = TRACKS[trackIdx]
 
-  const openCal = useCallback(() => {
+  const openCal = useCallback((initial) => {
+    // Accepts an optional initial view ('week' | 'tasks' | …). When wired straight
+    // to an onClick the arg is a DOM event, so anything non-string falls back to
+    // the calendar's home view.
+    setCalInitialView(typeof initial === 'string' ? initial : 'week')
     clearTimeout(closeTimerRef.current)
     setCalMounted(true)
     setCalOpen(true)
@@ -308,13 +313,13 @@ export default function TurningRoom() {
       >
         {/* Incoming / active wall. Keyed by turnSeq so the turn-in replays. */}
         <div className="wall wall-in" key={`in-${turnSeq}`}>
-          {renderWall(ORDER[idx], { clock, track, progress, onRaise: openCal })}
+          {renderWall(ORDER[idx], { clock, track, progress, onRaise: openCal, onOpenTasks: () => openCal('tasks') })}
         </div>
 
         {/* Outgoing wall, briefly, dissolving away through the atmosphere. */}
         {prevKey && (
           <div className="wall wall-out" key={`out-${turnSeq}`}>
-            {renderWall(prevKey, { clock, track, progress, onRaise: openCal })}
+            {renderWall(prevKey, { clock, track, progress, onRaise: openCal, onOpenTasks: () => openCal('tasks') })}
           </div>
         )}
       </div>
@@ -342,7 +347,7 @@ export default function TurningRoom() {
 
       {/* The legible layer — a sibling of the room, lit by the same music.
           Stays mounted through its fall-away exit (open=false) before unmounting. */}
-      {calMounted && <CalendarLayer open={calOpen} onClose={closeCal} reduced={reduced} clock={clock} />}
+      {calMounted && <CalendarLayer open={calOpen} onClose={closeCal} reduced={reduced} clock={clock} initialView={calInitialView} />}
 
       {/* The shared notes board — pulled down from the top, lifted back to close. */}
       {notesMounted && <NotesBoard open={notesOpen} onClose={closeNotes} />}
@@ -350,10 +355,10 @@ export default function TurningRoom() {
   )
 }
 
-function renderWall(key, { clock, track, progress, onRaise }) {
+function renderWall(key, { clock, track, progress, onRaise, onOpenTasks }) {
   switch (key) {
     case 'now':
-      return <Now clock={clock} today={TODAY} />
+      return <Now clock={clock} today={TODAY} onOpenTasks={onOpenTasks} />
     case 'music':
       return <Music track={track} progress={progress} />
     case 'day':

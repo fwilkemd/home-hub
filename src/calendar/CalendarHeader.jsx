@@ -14,6 +14,7 @@ const VIEWS = [
   ['month', 'Month'],
   ['week', 'Week'],
   ['day', 'Day'],
+  ['tasks', 'Tasks'],
 ]
 
 export default function CalendarHeader({
@@ -31,6 +32,7 @@ export default function CalendarHeader({
 }) {
   const title =
     view === 'month' ? monthYear(cursor) : view === 'week' ? rangeLabelForWeek(cursor) : dayLabelLong(cursor)
+  const tasksView = view === 'tasks'
 
   return (
     <>
@@ -66,7 +68,7 @@ export default function CalendarHeader({
         </div>
 
         <div className="cal-header-right">
-          <button type="button" className="cal-iconbtn" onClick={onNew} aria-label="New event">
+          <button type="button" className="cal-iconbtn" onClick={onNew} aria-label={tasksView ? 'New task' : 'New event'}>
             <Plus strokeWidth={1.75} />
           </button>
           <button type="button" className="cal-iconbtn" onClick={onClose} aria-label="Close calendar">
@@ -75,21 +77,27 @@ export default function CalendarHeader({
         </div>
       </header>
 
-      <div className="cal-cals" role="group" aria-label="Family calendars">
-        {calendars.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`cal-pill${visible[c.id] ? '' : ' is-off'}`}
-            style={{ '--chip': c.color }}
-            onClick={() => onToggleCalendar(c.id)}
-            aria-pressed={!!visible[c.id]}
-          >
-            <span className="cal-pill-dot" />
-            <span className="cal-pill-name">{c.name}</span>
-          </button>
-        ))}
-      </div>
+      {/* The family-calendar toggles only apply to calendar views; the tasks
+          section is grouped by person instead, so the strip is absent there.
+          (Not rendered rather than [hidden] — a CSS `display:flex` would beat the
+          hidden attribute and leave duplicate, focusable controls behind.) */}
+      {!tasksView && (
+        <div className="cal-cals" role="group" aria-label="Family calendars">
+          {calendars.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`cal-pill${visible[c.id] ? '' : ' is-off'}`}
+              style={{ '--chip': c.color }}
+              onClick={() => onToggleCalendar(c.id)}
+              aria-pressed={!!visible[c.id]}
+            >
+              <span className="cal-pill-dot" />
+              <span className="cal-pill-name">{c.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </>
   )
 }

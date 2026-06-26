@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMotes } from './useMotes.js'
 import { calendarStore } from '../calendar/store.js'
+import { tasksStore } from '../tasks/store.js'
 import { dateKey, addDays, startOfDay } from '../calendar/dateUtils.js'
 
 function dayFor(when) {
@@ -50,6 +51,13 @@ export default function Mind() {
       kind: 'home',
       note: 'caught thought',
     })
+    remove(mote.id)
+  }
+
+  // A caught thought can also become a chore instead of a dated event — an
+  // untimed to-do for no one in particular, ready to assign in the task list.
+  const toTask = (mote) => {
+    tasksStore.addTask({ title: mote.text || 'Thought', assignee: 'anyone' })
     remove(mote.id)
   }
 
@@ -129,6 +137,9 @@ export default function Mind() {
                       </button>
                       <button type="button" className="mote-act" onClick={() => file(m, 'weekend')}>
                         Weekend
+                      </button>
+                      <button type="button" className="mote-act mote-task" onClick={() => toTask(m)}>
+                        Task
                       </button>
                       <button type="button" className="mote-act mote-drop" onClick={() => drop(m)} aria-label="Let go">
                         ×

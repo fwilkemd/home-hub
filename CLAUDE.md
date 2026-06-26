@@ -131,9 +131,14 @@ The grammar is **small and consistent** so nothing conflicts.
   × / tap the scrim. Rises in, **falls + fades** out.
 - While open the room is inert and does **not** auto-turn (the light keeps
   drifting/recoloring), so you drop back onto the Day wall you left.
-- Inside: Month / Week / Day; ‹ Today › ; horizontal swipe = prev/next period;
-  vertical scrolls the time grid; tap empty = create, tap event = edit; four
-  toggleable family calendars; editor sheet slides in from the right.
+- Inside: Month / Week / Day / **Tasks**; ‹ Today › ; horizontal swipe =
+  prev/next period (in Tasks it steps a day); vertical scrolls the time grid; tap
+  empty = create, tap event = edit; four toggleable family calendars; editor sheet
+  slides in from the right.
+- **Tasks** is the chore list: grouped by person, one-tap check-off, `+`/`n` to
+  add, tap a task to edit, delete asks "just this day" vs "delete series". The
+  overdue **signal** is the only part that reaches the ambient face — it surfaces
+  on the **Now** wall (tap it → opens Tasks; the check there clears the glow).
 
 **Catch a thought — motes + the "mind" (press & hold):**
 - **Press-and-hold anywhere** in the room (460ms; moving >10px cancels → it was a
@@ -224,23 +229,28 @@ The grammar is **small and consistent** so nothing conflicts.
   calendar / let go (undo).
 - ✓ **Notes board** — S Pen scribble notes for each other, draggable with
   momentum, color-coded by author, "new" glow until acknowledged.
+- ✓ **Tasks** — the legible layer's chore list (a "Tasks" view beside
+  Month/Week/Day): grouped by person (Forrest / Katie / Both / Anyone), one-tap
+  check-off, recurring (daily / weekly / specific weekdays) or one-off, timed or
+  untimed, full create/edit, and delete with the explicit "just this day" vs
+  "delete series" choice (never a silent series-nuke). Persists
+  (`homehub.tasks.v1`). A caught thought can become a task from the mind. When a
+  timed task slips past its due time unchecked, it surfaces on the **Now** wall as
+  the single glowing concern ("Roo · unfed · 5:12") — check it off from anywhere
+  to clear it; several overdue shows the most urgent + a quiet "+N more".
 - ✓ **Deployed** to GitHub Pages, auto-deploys on push to the working branch.
 
 ## What's next (in priority order — see PLAYGROUND.md for rationale)
-1. **Tasks** — the legible layer's task list: real CRUD, persists,
-   **Skylight-simple** (function wins; dress lightly). Prefer reaching it as a
-   gesture/section near the calendar, not a brand-new standalone surface
-   (subtraction discipline). A caught thought should be able to become a task.
-2. **The calm ↔ lively dial** — the sensory frame for the ADHD↔autism tension
+1. **The calm ↔ lively dial** — the sensory frame for the ADHD↔autism tension
    (**earmarked, not built**). One control, auto by time + manual override, scales
    the whole room's energy: CALM (slow/dim/sparse/quiet) ↔ LIVELY (brighter/more
-   motion). The highest-leverage frame once tasks land.
-3. **Wire-it-up automations** — drag a thread from a trigger ("Forrest home 7:12")
+   motion). The highest-leverage frame now that tasks have landed.
+2. **Wire-it-up automations** — drag a thread from a trigger ("Forrest home 7:12")
    to an action ("kitchen → warm", "play Slow Tide"); later real Home Assistant.
-4. **Events have weight** — pick up / fling calendar blocks to reschedule
+3. **Events have weight** — pick up / fling calendar blocks to reschedule
    (`moveEvent` exists; drag-to-move was deferred as the gnarliest gesture).
-5. **Voice capture** — speak a thought into a mote.
-6. **Fling a mote onto a day** — throw a caught thought straight onto the calendar.
+4. **Voice capture** — speak a thought into a mote.
+5. **Fling a mote onto a day** — throw a caught thought straight onto the calendar.
 - Smaller: calendar `+N more` for stacked all-day events; on-device perf mode (the
   always-on `backdrop-filter` blur is the heaviest thing on weak GPUs).
 
