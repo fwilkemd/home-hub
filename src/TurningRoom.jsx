@@ -5,6 +5,9 @@ import Now from './states/Now.jsx'
 import Music from './states/Music.jsx'
 import Day from './states/Day.jsx'
 import CalendarLayer from './calendar/CalendarLayer.jsx'
+import CatchInput from './playground/CatchInput.jsx'
+import Mind from './playground/Mind.jsx'
+import { motesStore } from './playground/motesStore.js'
 import { isRaiseGesture } from './calendar/gestures.js'
 import { TRACKS, TODAY } from './data/mock.js'
 import { theme } from './theme.js'
@@ -44,6 +47,13 @@ export default function TurningRoom() {
   const calMountedRef = useRef(false)
   calMountedRef.current = calMounted
   const closeTimerRef = useRef(null)
+
+  // Playground: catch a thought by pressing and holding anywhere in the room.
+  const [catching, setCatching] = useState(null) // { xPct, yPct } while the catch card is open
+  const [pressPoint, setPressPoint] = useState(null) // { xPct, yPct } during the hold (feedback)
+  const catchingRef = useRef(false)
+  catchingRef.current = !!catching
+  const holdTimerRef = useRef(null)
 
   // Refs so the single heartbeat always reads current values without resubscribing.
   const idxRef = useRef(idx)
@@ -133,7 +143,7 @@ export default function TurningRoom() {
       // While the calendar is raised (or leaving), keep the light alive (clock +
       // track drift above still run) but never auto-turn the room underneath it —
       // so dropping the calendar always lands on the Day wall you left it on.
-      if (calMountedRef.current) return
+      if (calMountedRef.current || catchingRef.current) return
 
       // Turn on its own once the room has rested long enough.
       if (nowMs() - lastTurnRef.current >= theme.turnMs) {
@@ -143,15 +153,54 @@ export default function TurningRoom() {
     return () => clearInterval(id)
   }, [reduced, turnTo])
 
-  // --- touch / pointer: tap advances, horizontal swipe turns ------------------
+  // --- catch: press-and-hold anywhere to catch a thought ----------------------
+  const HOLD_MS = 460
+  const ptToPct = (clientX, clientY) => {
+    const r = roomRef.current?.getBoundingClientRect()
+    if (!r || !r.width || !r.height) return { xPct: 50, yPct: 45 }
+    return {
+      xPct: Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100)),
+      yPct: Math.max(0, Math.min(100, ((clientY - r.top) / r.height) * 100)),
+    }
+  }
+  const clearHold = () => {
+    clearTimeout(holdTimerRef.current)
+    setPressPoint(null)
+  }
+  const beginCatch = (pt) => {
+    clearHold()
+    setCatching(pt || { xPct: 50, yPct: 45 })
+  }
+  const commitCatch = (text) => {
+    motesStore.add(text, Date.now())
+    setCatching(null)
+  }
+  const cancelCatch = () => setCatching(null)
+
+  // --- touch / pointer: tap advances, swipe turns, press-and-hold catches -----
   const downRef = useRef(null)
   const onPointerDown = (e) => {
+    if (calMounted || catching) return
     downRef.current = { x: e.clientX, y: e.clientY }
+    const pt = ptToPct(e.clientX, e.clientY)
+    setPressPoint(pt)
+    clearTimeout(holdTimerRef.current)
+    holdTimerRef.current = setTimeout(() => {
+      downRef.current = null // consume, so the trailing pointerup doesn't also turn
+      beginCatch(pt)
+    }, HOLD_MS)
+  }
+  const onPointerMove = (e) => {
+    const d = downRef.current
+    if (!d) return
+    if (Math.abs(e.clientX - d.x) > 10 || Math.abs(e.clientY - d.y) > 10) clearHold() // moved → a swipe, not a hold
   }
   const onPointerUp = (e) => {
+    clearTimeout(holdTimerRef.current)
+    setPressPoint(null)
     const d = downRef.current
     downRef.current = null
-    if (!d || calMounted) return // calendar owns gestures while it's up (or leaving)
+    if (!d || calMounted || catching) return // calendar / catch own gestures while up
     const dx = e.clientX - d.x
     const dy = e.clientY - d.y
     // Pull up on the Day wall to raise the calendar (vertical-dominant).
@@ -165,11 +214,18 @@ export default function TurningRoom() {
       turnBy(1) // tap → next wall
     }
   }
+  const onPointerCancel = () => {
+    clearHold()
+    downRef.current = null
+  }
 
   // --- keyboard: arrows / space, for accessibility ----------------------------
   const onKeyDown = (e) => {
-    if (calMounted) return // calendar handles its own keys while it's up (or leaving)
-    if (e.key === 'ArrowUp' && ORDER[idx] === 'day') {
+    if (calMounted || catching) return // calendar / catch handle their own keys
+    if (e.key === 'c' || e.key === 'C') {
+      e.preventDefault()
+      beginCatch({ xPct: 50, yPct: 42 }) // catch a thought from the keyboard
+    } else if (e.key === 'ArrowUp' && ORDER[idx] === 'day') {
       e.preventDefault()
       openCal() // pull the calendar up from the Day wall
     } else if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
@@ -203,7 +259,9 @@ export default function TurningRoom() {
         aria-hidden={calMounted || undefined}
         style={calMounted ? { pointerEvents: 'none' } : undefined}
         onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
         onKeyDown={onKeyDown}
       >
         {/* Incoming / active wall. Keyed by turnSeq so the turn-in replays. */}
@@ -218,6 +276,19 @@ export default function TurningRoom() {
           </div>
         )}
       </div>
+
+      {/* Playground: the light pools under a held finger, then a thought is caught. */}
+      {pressPoint && !catching && (
+        <div
+          className="catch-pool catch-pool-pre"
+          style={{ left: `${pressPoint.xPct}%`, top: `${pressPoint.yPct}%` }}
+          aria-hidden="true"
+        />
+      )}
+      {catching && <CatchInput xPct={catching.xPct} yPct={catching.yPct} onCommit={commitCatch} onCancel={cancelCatch} />}
+
+      {/* Caught thoughts live here, always glanceable (hidden under the calendar). */}
+      {!calMounted && <Mind />}
 
       {/* The legible layer — a sibling of the room, lit by the same music.
           Stays mounted through its fall-away exit (open=false) before unmounting. */}
