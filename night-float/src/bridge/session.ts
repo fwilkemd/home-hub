@@ -233,7 +233,9 @@ export function runContextAction(a: import('../contracts/runtime').ContextAction
       dispatch({ type: 'PlaceOrder', draft: { kind: 'nursing', task: 'custom', text: `opened drawer ${a.ui.drawerId}`, label: `Opened ${a.ui.drawerId}` } });
       break;
     case 'startProcedureFlow':
-      dispatch({ type: 'StartProcedure', procedureId: a.ui.procedureId });
+      // site choice happens in the UI (SitePicker); it dispatches StartProcedure
+      hubActions.setSitePicker({ procedureId: a.ui.procedureId });
+      getWorld()?.exitPointerLock();
       break;
   }
 }

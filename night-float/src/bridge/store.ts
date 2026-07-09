@@ -101,6 +101,10 @@ export interface HubState {
   // ---- subsystem UI state
   us: UsUiState;
   procedure: ProcedureRuntime | null;
+  /** live E-hold gesture progress for the active procedure step */
+  procedureHold: { stepId: string; progress: number } | null;
+  /** site-choice dialog request for a procedure about to start */
+  sitePicker: { procedureId: string } | null;
   lastExam: LastExamCard | null;
   debrief: DebriefData | null;
   toasts: Toast[];
@@ -159,6 +163,8 @@ const initialState: HubState = {
   helpOpen: false,
   us: initialUsState,
   procedure: null,
+  procedureHold: null,
+  sitePicker: null,
   lastExam: null,
   debrief: null,
   toasts: [],
@@ -240,6 +246,12 @@ export const hubActions = {
   },
   setUs(patch: Partial<UsUiState>): void {
     hubStore.setState((s) => ({ us: { ...s.us, ...patch } }));
+  },
+  setProcedureHold(hold: { stepId: string; progress: number } | null): void {
+    hubStore.setState({ procedureHold: hold });
+  },
+  setSitePicker(req: { procedureId: string } | null): void {
+    hubStore.setState({ sitePicker: req });
   },
   updateSettings(patch: Partial<SettingsState>): void {
     hubStore.setState((s) => {
