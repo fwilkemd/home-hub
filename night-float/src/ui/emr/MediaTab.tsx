@@ -31,10 +31,10 @@ export function MediaTab() {
             ) : (
               <span className="noimg">image unavailable</span>
             )}
-            <figcaption>
+            <span className="cap">
               <span>{m.label}</span>
               <span className="mono">{wallClock(clockStart, m.t, false)}</span>
-            </figcaption>
+            </span>
           </button>
         ))}
       </div>

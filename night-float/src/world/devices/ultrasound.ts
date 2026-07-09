@@ -8,7 +8,7 @@ import type { WorldCtx, Updater } from '../types';
 import type { ContextAction } from '../../contracts/runtime';
 import { hubStore } from '../../bridge/store';
 import { SCREENS, US_CART, screenNormal } from '../layout';
-import { mergedBoxes } from '../lib';
+import { mergedBoxes, tubeBetween } from '../lib';
 
 export function buildUltrasound(ctx: WorldCtx): Updater {
   const { scene } = ctx;
@@ -74,7 +74,7 @@ export function buildUltrasound(ctx: WorldCtx): Updater {
   g.add(cable);
   scene.add(g);
 
-  // screen + housing (world coords from layout)
+  // screen + housing + support stub (world coords from layout)
   const n = screenNormal(spec);
   const housing = new THREE.Mesh(
     new THREE.BoxGeometry(spec.w + 0.05, spec.h + 0.05, 0.05),
@@ -83,6 +83,14 @@ export function buildUltrasound(ctx: WorldCtx): Updater {
   housing.position.copy(spec.pos).addScaledVector(n, -0.028);
   housing.rotation.set(spec.pitch, spec.yaw, 0, 'YXZ');
   scene.add(housing);
+  scene.add(
+    tubeBetween(
+      new THREE.Vector3(US_CART.pos.x - 0.01, 1.12, US_CART.pos.z - 0.02),
+      spec.pos.clone().addScaledVector(n, -0.05),
+      0.018,
+      bodyMat,
+    ),
+  );
   const screen = ctx.screens.createScreen(scene, 'us_machine');
 
   ctx.reg.add({

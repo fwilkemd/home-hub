@@ -29,6 +29,19 @@ export function createProbe(ctx: WorldCtx, rig: PatientRig): Updater {
   let throttle = 0;
   let lastQuality = -1;
   const tmp = new THREE.Vector3();
+  const bodyUp = new THREE.Vector3();
+  const delta = new THREE.Vector3();
+
+  /** lateral (along-the-skin) distance from hit point to an anchor */
+  const lateralDist = (anchor: THREE.Object3D, p: THREE.Vector3): number => {
+    anchor.getWorldPosition(tmp);
+    delta.subVectors(p, tmp);
+    if (anchor.parent) {
+      bodyUp.set(0, 1, 0).applyQuaternion(anchor.parent.getWorldQuaternion(new THREE.Quaternion()));
+      delta.addScaledVector(bodyUp, -delta.dot(bodyUp));
+    }
+    return delta.length();
+  };
 
   const setView = (v: UsViewId | null): void => {
     if (view === v) return;
@@ -59,7 +72,7 @@ export function createProbe(ctx: WorldCtx, rig: PatientRig): Updater {
     let bestD = Infinity;
     let currentD = Infinity;
     for (const [id, anchor] of rig.usAnchors) {
-      const d = anchor.getWorldPosition(tmp).distanceTo(p);
+      const d = lateralDist(anchor, p);
       if (d < bestD) {
         bestD = d;
         best = id;

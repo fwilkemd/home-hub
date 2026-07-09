@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import type { WorldCtx, Updater } from '../types';
 import { PATIENT, SCREENS, VENT_CART, screenNormal } from '../layout';
-import { mergedBoxes, paintCorrugation } from '../lib';
+import { mergedBoxes, paintCorrugation, tubeBetween } from '../lib';
 
 export function buildVent(ctx: WorldCtx): Updater {
   const { scene, deps } = ctx;
@@ -57,7 +57,7 @@ export function buildVent(ctx: WorldCtx): Updater {
   }
   scene.add(g);
 
-  // screen (world-positioned from layout) + housing
+  // screen (world-positioned from layout) + housing + support stub
   const n = screenNormal(spec);
   const housing = new THREE.Mesh(
     new THREE.BoxGeometry(spec.w + 0.05, spec.h + 0.05, 0.055),
@@ -66,6 +66,14 @@ export function buildVent(ctx: WorldCtx): Updater {
   housing.position.copy(spec.pos).addScaledVector(n, -0.03);
   housing.rotation.set(spec.pitch, spec.yaw, 0, 'YXZ');
   scene.add(housing);
+  scene.add(
+    tubeBetween(
+      new THREE.Vector3(VENT_CART.pos.x + 0.02, 1.08, VENT_CART.pos.z + 0.02),
+      spec.pos.clone().addScaledVector(n, -0.06),
+      0.02,
+      bodyMat,
+    ),
+  );
   const screen = ctx.screens.createScreen(scene, 'vent');
 
   // corrugated circuit toward the patient's mouth

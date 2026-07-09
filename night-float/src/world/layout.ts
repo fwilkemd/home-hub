@@ -39,7 +39,7 @@ export interface ScreenSpec {
 export const SCREENS: Record<DeviceId, ScreenSpec> = {
   monitor: { pos: new THREE.Vector3(1.83, 1.72, -2.14), yaw: -0.24, pitch: -0.06, w: 0.55, h: 0.34 },
   vent: { pos: new THREE.Vector3(-0.6, 1.26, -1.84), yaw: 0.42, pitch: -0.2, w: 0.4, h: 0.28 },
-  pump: { pos: new THREE.Vector3(1.72, 1.28, -1.38), yaw: -0.3, pitch: -0.08, w: 0.19, h: 0.12 },
+  pump: { pos: new THREE.Vector3(1.72, 1.28, -1.345), yaw: -0.15, pitch: -0.08, w: 0.19, h: 0.12 },
   us_machine: { pos: new THREE.Vector3(1.71, 1.34, 0.66), yaw: -2.6, pitch: -0.18, w: 0.34, h: 0.24 },
   workstation: { pos: new THREE.Vector3(-2.82, 1.24, 0.5), yaw: Math.PI / 2, pitch: -0.05, w: 0.5, h: 0.31 },
 };

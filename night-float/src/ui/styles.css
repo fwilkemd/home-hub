@@ -449,6 +449,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  z-index: 65; /* above the EMR window so sign-order feedback stays visible */
+  pointer-events: none;
 }
 .toast {
   padding: 8px 12px;
@@ -853,7 +855,7 @@ h2.chart-oneliner { margin: 0 0 12px; font-size: 19px; font-weight: 650; }
   background: #05070b;
 }
 .mediathumb .noimg { display: flex; align-items: center; justify-content: center; color: var(--faint); font-size: 11px; font-style: italic; }
-.mediathumb figcaption { font-size: 11.5px; color: var(--dim); display: flex; justify-content: space-between; gap: 6px; }
+.mediathumb .cap { font-size: 11.5px; color: var(--dim); display: flex; justify-content: space-between; gap: 6px; }
 .lightbox {
   position: fixed;
   inset: 0;

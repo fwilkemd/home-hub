@@ -108,6 +108,8 @@ export function createWorld(deps: WorldDeps): WorldHandle {
       const dt = Math.min(Math.max(realDtS, 0), 0.1);
       ctx.clock.t += dt;
       player.update(dt);
+      // raycasts (hover/probe) run before render — matrices must be current
+      scene.updateMatrixWorld();
       if (hubStore.getState().pointerLocked) hover.update(dt);
       else hover.clear();
       for (const u of updaters) u(dt);
