@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "interventions": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Order-panel tab; the engine renders whatever categories exist"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "bolus",
+              "infusion",
+              "action",
+              "lab",
+              "imaging"
+            ]
+          },
+          "requires": {
+            "default": [],
+            "description": "Generic tags that must have been granted",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "grants": {
+            "default": [],
+            "description": "Tags granted when the nurse task completes",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "busySec": {
+            "default": 0,
+            "description": "Nurse task time before the order takes effect",
+            "type": "number",
+            "minimum": 0
+          },
+          "effects": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "var": {
+                  "type": "string"
+                },
+                "delta": {
+                  "description": "Continuous vars: peak additive contribution",
+                  "type": "number"
+                },
+                "set": {
+                  "description": "Discrete vars (e.g. rhythm): value applied at onsetSec",
+                  "type": "string"
+                },
+                "onsetSec": {
+                  "default": 0,
+                  "type": "number",
+                  "minimum": 0
+                },
+                "peakSec": {
+                  "description": "Time (from effect start) at which the full delta is reached; defaults to onsetSec",
+                  "type": "number",
+                  "minimum": 0
+                },
+                "durationSec": {
+                  "description": "Hold time measured from onsetSec. Boluses default to 300; ignored for running infusions",
+                  "type": "number",
+                  "minimum": 0
+                },
+                "decaySec": {
+                  "description": "Linear decay time after the hold ends (or after an infusion stops); default 120",
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "var"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "onOrderMessage": {
+            "type": "string"
+          },
+          "resultDelaySec": {
+            "description": "lab/imaging: delay until the result posts",
+            "type": "number",
+            "minimum": 0
+          },
+          "resultText": {
+            "description": "lab/imaging result; {{var}} reads the sim value at result time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "category",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "interventions"
+  ],
+  "additionalProperties": false
+}

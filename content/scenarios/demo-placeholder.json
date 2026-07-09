@@ -8,7 +8,7 @@
     "sex": "unspecified",
     "weightKg": 0,
     "chartNote": "Placeholder chart note. Every value in this file is deliberately nonsensical demo data authored to exercise the engine — do not treat as clinical content.",
-    "history": ["placeholder history item"],
+    "history": ["placeholder history item", "second placeholder item"],
     "homeMeds": ["placeholder home med"]
   },
   "customVars": [
@@ -16,13 +16,80 @@
   ],
   "initial": {
     "vitals": { "hr": 118, "sbp": 84, "dbp": 46, "spo2": 91, "rr": 26, "tempC": 38.9, "rhythm": "sinus" },
-    "grants": []
+    "grants": ["iv-access"]
   },
   "drift": {
     "hr": { "setpoint": 145, "ratePerMin": 2.0 },
-    "sbp": { "setpoint": 70, "ratePerMin": -1.0 },
-    "dbp": { "setpoint": 40, "ratePerMin": -0.5 },
+    "sbp": { "setpoint": 64, "ratePerMin": -1.2 },
+    "dbp": { "setpoint": 34, "ratePerMin": -0.7 },
     "spo2": { "setpoint": 86, "ratePerMin": -0.4 }
   },
+  "exam": {
+    "head": [{ "text": "Placeholder head finding (default)." }],
+    "chest": [
+      { "when": { "var": "spo2", "op": "<", "value": 88 }, "text": "Placeholder chest finding B (low analyte state)." },
+      { "text": "Placeholder chest finding A (default)." }
+    ],
+    "abdomen": [{ "text": "Placeholder abdomen finding (default)." }],
+    "extremities": [
+      { "when": { "var": "map", "op": "<", "value": 55 }, "text": "Placeholder extremity finding: mottled (placeholder)." },
+      { "text": "Placeholder extremity finding (default)." }
+    ]
+  },
+  "alarms": {
+    "map": { "low": 60 },
+    "spo2": { "low": 90 },
+    "hr": { "high": 150 }
+  },
+  "events": [
+    {
+      "id": "crash-1",
+      "trigger": { "when": { "var": "map", "op": "<", "value": 50, "sustainSec": 120 } },
+      "actions": [
+        { "type": "setVar", "var": "rhythm", "value": "vt" },
+        { "type": "message", "from": "Nurse", "text": "Rhythm change on the monitor!" },
+        { "type": "revealExam", "region": "chest", "text": "Placeholder chest finding C (revealed after the rhythm change)." }
+      ]
+    },
+    {
+      "id": "crash-2",
+      "trigger": { "when": { "var": "rhythm", "op": "==", "value": "vt", "sustainSec": 150 } },
+      "actions": [
+        { "type": "setVar", "var": "rhythm", "value": "asystole" },
+        { "type": "setSetpoint", "var": "sbp", "setpoint": 0, "rampSec": 20 },
+        { "type": "setSetpoint", "var": "dbp", "setpoint": 0, "rampSec": 20 },
+        { "type": "message", "from": "Nurse", "text": "No pulse!" }
+      ]
+    },
+    {
+      "id": "rescue-1",
+      "trigger": { "when": { "all": [
+        { "var": "rhythm", "op": "==", "value": "vt" },
+        { "var": "map", "op": ">=", "value": 60, "sustainSec": 60 }
+      ] } },
+      "actions": [
+        { "type": "setVar", "var": "rhythm", "value": "sinus" },
+        { "type": "message", "from": "Nurse", "text": "Back in a regular rhythm." }
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "id": "stabilized",
+      "kind": "success",
+      "label": "Stabilized (placeholder)",
+      "when": { "all": [
+        { "var": "map", "op": ">=", "value": 65, "sustainSec": 300 },
+        { "var": "rhythm", "op": "==", "value": "sinus" }
+      ] }
+    },
+    {
+      "id": "arrest",
+      "kind": "fail",
+      "label": "Arrest (placeholder)",
+      "when": { "var": "rhythm", "op": "==", "value": "asystole", "sustainSec": 10 }
+    }
+  ],
+  "arterialLine": true,
   "timeLimitSec": 1800
 }

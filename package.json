@@ -9,15 +9,20 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "validate": "tsx src/cli/validate.ts",
+    "simulate": "tsx src/cli/simulate.ts",
+    "schema:export": "tsx src/cli/schema-export.ts"
   },
   "dependencies": {
     "three": "^0.185.1",
-    "troika-three-text": "^0.52.4"
+    "troika-three-text": "^0.52.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/three": "^0.185.1",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "tsx": "^4.23.0",
     "typescript": "^7.0.2",
     "vite": "^8.1.4",
     "vitest": "^4.1.10"

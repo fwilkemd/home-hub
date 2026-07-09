@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "interventions": [
+    {
+      "id": "fluid-bolus-x",
+      "label": "Fluid X 500 (placeholder)",
+      "category": "Fluids",
+      "type": "bolus",
+      "busySec": 20,
+      "effects": [
+        { "var": "map", "delta": 8, "onsetSec": 30, "peakSec": 180, "durationSec": 600, "decaySec": 400 },
+        { "var": "hr", "delta": -6, "onsetSec": 60, "peakSec": 240, "durationSec": 600, "decaySec": 400 }
+      ],
+      "onOrderMessage": "Hanging fluid X (placeholder)."
+    },
+    {
+      "id": "place-central-line",
+      "label": "Place central line (placeholder)",
+      "category": "Procedures",
+      "type": "action",
+      "busySec": 90,
+      "grants": ["central-access"],
+      "onOrderMessage": "Setting up for the central line (placeholder)."
+    },
+    {
+      "id": "pressor-a-low",
+      "label": "Pressor A 0.05 (placeholder)",
+      "category": "Meds",
+      "type": "infusion",
+      "requires": ["central-access"],
+      "busySec": 45,
+      "effects": [
+        { "var": "map", "delta": 14, "onsetSec": 60, "peakSec": 240, "decaySec": 180 },
+        { "var": "hr", "delta": 4, "onsetSec": 60, "peakSec": 240, "decaySec": 180 }
+      ],
+      "onOrderMessage": "Starting pressor A at the low preset (placeholder)."
+    },
+    {
+      "id": "pressor-a-high",
+      "label": "Pressor A 0.20 (placeholder)",
+      "category": "Meds",
+      "type": "infusion",
+      "requires": ["central-access"],
+      "busySec": 45,
+      "effects": [
+        { "var": "map", "delta": 26, "onsetSec": 60, "peakSec": 240, "decaySec": 180 },
+        { "var": "hr", "delta": 9, "onsetSec": 60, "peakSec": 240, "decaySec": 180 }
+      ],
+      "onOrderMessage": "Starting pressor A at the high preset (placeholder)."
+    },
+    {
+      "id": "gas-mix-b",
+      "label": "Gas mix B (placeholder)",
+      "category": "Meds",
+      "type": "bolus",
+      "busySec": 15,
+      "effects": [
+        { "var": "spo2", "delta": 6, "onsetSec": 30, "peakSec": 120, "durationSec": 900, "decaySec": 300 }
+      ],
+      "onOrderMessage": "Adjusting gas mix B (placeholder)."
+    },
+    {
+      "id": "lab-panel-x",
+      "label": "Lab panel X (placeholder)",
+      "category": "Labs",
+      "type": "lab",
+      "busySec": 10,
+      "resultDelaySec": 300,
+      "resultText": "Analyte Q: {{analyteQ}} (placeholder units)",
+      "onOrderMessage": "Drawing lab panel X (placeholder)."
+    },
+    {
+      "id": "imaging-y",
+      "label": "Imaging Y (placeholder)",
+      "category": "Imaging",
+      "type": "imaging",
+      "busySec": 30,
+      "resultDelaySec": 420,
+      "resultText": "Imaging Y read: placeholder finding, clinically meaningless.",
+      "onOrderMessage": "Calling for imaging Y (placeholder)."
+    }
+  ]
+}

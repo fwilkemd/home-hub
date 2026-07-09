@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "demo-stable",
+  "title": "Stable bay, NIBP cycling (placeholder)",
+  "patient": {
+    "name": "Sam Placeholder",
+    "age": 0,
+    "sex": "unspecified",
+    "weightKg": 0,
+    "chartNote": "Second placeholder scenario: stable nonsense vitals, no arterial line, short time limit — exists to exercise the scenario picker, NIBP cycling, and the timeout ending.",
+    "history": ["placeholder"],
+    "homeMeds": []
+  },
+  "initial": {
+    "vitals": { "hr": 72, "sbp": 122, "dbp": 68, "spo2": 97, "rr": 14, "tempC": 36.8, "rhythm": "afib" },
+    "grants": ["iv-access"]
+  },
+  "drift": {
+    "hr": { "setpoint": 88, "ratePerMin": 0.8 }
+  },
+  "exam": {
+    "chest": [{ "text": "Placeholder finding: irregular rhythm noted (placeholder)." }]
+  },
+  "alarms": {
+    "hr": { "high": 110 },
+    "spo2": { "low": 92 }
+  },
+  "arterialLine": false,
+  "timeLimitSec": 600
+}

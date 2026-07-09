@@ -1,0 +1,538 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "patient": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "age": {
+          "type": "number"
+        },
+        "sex": {
+          "type": "string"
+        },
+        "weightKg": {
+          "type": "number"
+        },
+        "chartNote": {
+          "type": "string"
+        },
+        "history": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "homeMeds": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "age",
+        "sex",
+        "weightKg"
+      ],
+      "additionalProperties": false
+    },
+    "customVars": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "initial": {
+            "type": "number"
+          },
+          "setpoint": {
+            "type": "number"
+          },
+          "ratePerMin": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "initial"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "initial": {
+      "type": "object",
+      "properties": {
+        "vitals": {
+          "type": "object",
+          "properties": {
+            "hr": {
+              "type": "number"
+            },
+            "sbp": {
+              "type": "number"
+            },
+            "dbp": {
+              "type": "number"
+            },
+            "spo2": {
+              "type": "number"
+            },
+            "rr": {
+              "type": "number"
+            },
+            "tempC": {
+              "type": "number"
+            },
+            "rhythm": {
+              "default": "sinus",
+              "type": "string",
+              "enum": [
+                "sinus",
+                "afib",
+                "svt",
+                "vt",
+                "vf",
+                "asystole"
+              ]
+            }
+          },
+          "required": [
+            "hr",
+            "sbp",
+            "dbp",
+            "spo2",
+            "rr",
+            "tempC"
+          ],
+          "additionalProperties": false
+        },
+        "grants": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "vitals"
+      ],
+      "additionalProperties": false
+    },
+    "drift": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "setpoint": {
+            "type": "number"
+          },
+          "ratePerMin": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "setpoint",
+          "ratePerMin"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "exam": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "when": {
+              "description": "Omit for the default finding; first match wins",
+              "$ref": "#/$defs/__schema0"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "alarms": {
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "low": {
+            "type": "number"
+          },
+          "high": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "events": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "trigger": {
+            "type": "object",
+            "properties": {
+              "when": {
+                "$ref": "#/$defs/__schema0"
+              }
+            },
+            "required": [
+              "when"
+            ],
+            "additionalProperties": false
+          },
+          "actions": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "effect"
+                    },
+                    "effect": {
+                      "type": "object",
+                      "properties": {
+                        "var": {
+                          "type": "string"
+                        },
+                        "delta": {
+                          "description": "Continuous vars: peak additive contribution",
+                          "type": "number"
+                        },
+                        "set": {
+                          "description": "Discrete vars (e.g. rhythm): value applied at onsetSec",
+                          "type": "string"
+                        },
+                        "onsetSec": {
+                          "default": 0,
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "peakSec": {
+                          "description": "Time (from effect start) at which the full delta is reached; defaults to onsetSec",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "durationSec": {
+                          "description": "Hold time measured from onsetSec. Boluses default to 300; ignored for running infusions",
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "decaySec": {
+                          "description": "Linear decay time after the hold ends (or after an infusion stops); default 120",
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "var"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "effect"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "setVar"
+                    },
+                    "var": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "var",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "setSetpoint"
+                    },
+                    "var": {
+                      "type": "string"
+                    },
+                    "setpoint": {
+                      "type": "number"
+                    },
+                    "ratePerMin": {
+                      "type": "number"
+                    },
+                    "rampSec": {
+                      "description": "Reach the setpoint over this many seconds (overrides ratePerMin)",
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "var",
+                    "setpoint"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "message"
+                    },
+                    "from": {
+                      "default": "Nurse",
+                      "type": "string"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "revealExam"
+                    },
+                    "region": {
+                      "type": "string"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "region",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "const": "endpoint"
+                    },
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "repeatable": {
+            "default": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "trigger",
+          "actions"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "endpoints": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "success",
+              "fail"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "when": {
+            "description": "Omit for endpoints only reachable via an `endpoint` event action",
+            "$ref": "#/$defs/__schema0"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "arterialLine": {
+      "default": true,
+      "description": "false → the monitor cycles NIBP every 3 min instead of continuous BP numerics",
+      "type": "boolean"
+    },
+    "timeLimitSec": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "title",
+    "initial"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "__schema0": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "var": {
+              "type": "string",
+              "description": "Variable name; `rhythm` compares against rhythm tokens"
+            },
+            "op": {
+              "type": "string",
+              "enum": [
+                "<",
+                "<=",
+                ">",
+                ">=",
+                "=="
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "sustainSec": {
+              "description": "Condition must hold for this many consecutive seconds before it counts as true",
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "var",
+            "op",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "all": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/__schema0"
+              }
+            }
+          },
+          "required": [
+            "all"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
