@@ -83,6 +83,9 @@ export function makeCxrPainter(): CxrPainter {
     };
     lung(-1);
     lung(1);
+    // sub-diaphragmatic soft tissue so the film base is not empty black
+    c.fillStyle = gray(0.3, 0.85);
+    c.fillRect(W * 0.1, H * 0.72, W * 0.8, H * 0.2);
 
     // findings from the ultrasound lung views (cheap correlate)
     const lungViews = [
@@ -99,13 +102,13 @@ export function makeCxrPainter(): CxrPainter {
         lf.post?.kind === 'lung' ? lf.post.bLines : 0,
       );
       if (eff > 0.3) {
-        // blunted costophrenic angle
+        // blunted costophrenic angle: opacity pooling at the lateral base
         c.fillStyle = gray(0.42, 0.9);
         c.beginPath();
-        c.moveTo(cx + lf.side * W * 0.08, H * 0.66);
-        c.lineTo(cx + lf.side * W * 0.38, H * (0.66 - 0.1 * eff));
-        c.lineTo(cx + lf.side * W * 0.38, H * 0.7);
-        c.lineTo(cx + lf.side * W * 0.08, H * 0.7);
+        c.moveTo(cx + lf.side * W * 0.1, H * 0.72);
+        c.lineTo(cx + lf.side * W * 0.38, H * (0.7 - 0.09 * eff));
+        c.lineTo(cx + lf.side * W * 0.38, H * 0.74);
+        c.quadraticCurveTo(cx + lf.side * W * 0.24, H * 0.76, cx + lf.side * W * 0.1, H * 0.74);
         c.closePath();
         c.fill();
       }

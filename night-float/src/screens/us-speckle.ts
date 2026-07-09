@@ -43,7 +43,7 @@ function makeTile(seed: number, cellPx: number): HTMLCanvasElement {
         lerp(lat(ix, iy + 1), lat(ix + 1, iy + 1), ux),
         uy,
       );
-      const gvRaw = 0.36 + 0.58 * v;
+      const gvRaw = 0.3 + 0.74 * v;
       const gv = Math.round(255 * clamp(gvRaw, 0, 1));
       img.data[p++] = gv;
       img.data[p++] = gv;
@@ -55,8 +55,8 @@ function makeTile(seed: number, cellPx: number): HTMLCanvasElement {
   return cv;
 }
 
-/** Multiplicative speckle pass: tile drawn with slow deterministic drift. */
-export function speckleMultiply(
+/** Speckle pass: tile drawn tiled with slow deterministic drift. */
+export function specklePass(
   ctx: CanvasRenderingContext2D,
   tile: HTMLCanvasElement,
   scale: number,
@@ -65,9 +65,10 @@ export function speckleMultiply(
   w: number,
   h: number,
   alpha: number,
+  op: GlobalCompositeOperation = 'multiply',
 ): void {
   ctx.save();
-  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalCompositeOperation = op;
   ctx.globalAlpha = alpha;
   const s = TILE * scale;
   const x0 = -(((ox % s) + s) % s);
@@ -108,9 +109,9 @@ export function radialGain(
   h: number,
 ): void {
   const grad = ctx.createRadialGradient(ax, ay, 0, ax, ay, r1);
-  grad.addColorStop(0, `rgba(0,0,0,${clamp(0.16 * (1 - gain), 0, 1)})`);
-  grad.addColorStop(0.45, `rgba(0,0,0,${clamp(0.65 - 0.9 * gain, 0, 0.75)})`);
-  grad.addColorStop(1, `rgba(0,0,0,${clamp(0.92 - 1.05 * gain, 0, 0.92)})`);
+  grad.addColorStop(0, `rgba(0,0,0,${clamp(0.14 * (1 - gain), 0, 1)})`);
+  grad.addColorStop(0.45, `rgba(0,0,0,${clamp(0.5 - 0.8 * gain, 0, 0.7)})`);
+  grad.addColorStop(1, `rgba(0,0,0,${clamp(0.85 - 1.05 * gain, 0, 0.9)})`);
   ctx.save();
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);

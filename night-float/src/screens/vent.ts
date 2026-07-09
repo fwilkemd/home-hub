@@ -173,7 +173,9 @@ export function createVentScreen(engine: EngineHandle): DeviceScreenInstance {
       const cy = TOP_H + 14 + row * 76;
       painter.label(label, cx, cy, 12, DIM);
       painter.text(value, cx, cy + 30, 32, color, 'left', MONO, '700');
-      painter.text(unit, cx + Math.min(cw - 8, 118), cy + 36, 11, DIM, 'left');
+      painter.ctx.font = `700 32px ${MONO}`;
+      const vw = painter.ctx.measureText(value).width;
+      if (unit) painter.text(unit, cx + vw + 9, cy + 38, 11, DIM, 'left');
     };
     cell(0, 0, 'PPEAK', String(Math.round(vw.ppeak)), 'cmH2O', LANE_COLORS.paw);
     cell(0, 1, 'PPLAT', String(Math.round(vw.pplat)), 'cmH2O');

@@ -14,3 +14,9 @@ One-liners for calls the spec left open (SPEC §0).
 - **Nurse pathing:** engine tracks abstract stations + task timing; the world maps stations to positions and animates the walk (no navmesh, per spec).
 - **Sim-time units:** all engine timing (lab turnaround, PK, scripts) is sim-seconds, so time compression accelerates everything coherently.
 - **M-mode ultrasound:** skipped (explicitly optional in SPEC §8.2) to protect the schedule.
+- **Waveforms run on real time** (not sim time): tracings stay physiologic under 8×/32× compression while numerics/alarms/labs follow sim time — matches how the sim is actually read.
+- **Beat sync without shared state:** monitor, ultrasound wall motion and the QRS beep each build a `BeatClock(beatSeed)`; beat times are a pure function of seed + params, so instances agree bit-exactly.
+- **Probe window quality** uses lateral (along-skin) distance to the view anchor; proximity gate is camera↔patient distance.
+- **Stethoscope pickup** lives on the supply cart (no other diegetic source existed); probe/kits can be returned to their holsters.
+- **Procedure holds:** the HUD panel's [Complete step] button drives steps standalone (holds render an indeterminate ring); world-gesture holds can layer on later without contract changes.
+- **NIBP interval ± buttons dropped** from the monitor zoom (no clean command); Silence + NIBP-now shipped.

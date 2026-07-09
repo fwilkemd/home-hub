@@ -1,8 +1,7 @@
 /**
  * Integration point for the heavy modules (world / screens / audio / ai).
- * Phase-1/3 workstreams export documented factories from their directories;
- * the integration owner wires them here (Phase 2). Keeping this indirection
- * means the app boots at every phase regardless of module progress.
+ * Factories load lazily so the menu boots instantly and each layer can ship
+ * independently. Missing modules degrade gracefully (session tolerates null).
  */
 import type { EngineHandle, ScreensHandle, WorldDeps, WorldHandle } from '../contracts/runtime';
 
@@ -20,10 +19,19 @@ export interface AppModules {
   createAudio?: (engine: EngineHandle, world: WorldHandle | null) => AudioHandle;
 }
 
+let cached: AppModules | null = null;
+
 export async function loadModules(): Promise<AppModules> {
-  // Phase 2 wires:
-  //   const { createWorld } = await import('../world');
-  //   const { createScreens } = await import('../screens');
-  //   const { createAudio } = await import('../audio');
-  return {};
+  if (cached) return cached;
+  const [world, screens, audio] = await Promise.all([
+    import('../world'),
+    import('../screens'),
+    import('../audio'),
+  ]);
+  cached = {
+    createWorld: world.createWorld,
+    createScreens: screens.createScreens,
+    createAudio: audio.createAudio,
+  };
+  return cached;
 }

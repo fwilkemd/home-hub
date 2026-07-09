@@ -344,20 +344,19 @@ export function createMonitorScreen(engine: EngineHandle): DeviceScreenInstance 
       painter.text(stamp, x, y + 62, 12, COLORS.dim);
     }
 
-    // RR
-    y = TOP_H + 318;
+    // RR + EtCO2 side by side
+    y = TOP_H + 322;
     painter.label('RR', x, y, 13, COLORS.resp);
-    painter.text(String(Math.round(vitals.rr)), x + 118, y + 4, 34, COLORS.resp, 'right', MONO, '700');
-    painter.text('/min', x + 126, y + 8, 11, COLORS.dim);
-
-    // EtCO2
+    painter.text('/min', x + wCol * 0.42, y, 11, COLORS.dim, 'right');
+    painter.text(String(Math.round(vitals.rr)), x + wCol * 0.42 - 34, y + 32, 38, COLORS.resp, 'right', MONO, '700');
     if (params.capno.present && vitals.etco2 !== undefined) {
-      painter.label('EtCO2', x + wCol / 2 + 8, y, 13, COLORS.capno);
+      painter.label('EtCO2', x + wCol * 0.56, y, 13, COLORS.capno);
+      painter.text('mmHg', x + wCol, y, 11, COLORS.dim, 'right');
       painter.text(
         String(Math.round(vitals.etco2)),
-        x + wCol - 24,
-        y + 4,
-        34,
+        x + wCol - 34,
+        y + 32,
+        38,
         COLORS.capno,
         'right',
         MONO,
@@ -366,12 +365,12 @@ export function createMonitorScreen(engine: EngineHandle): DeviceScreenInstance 
     }
 
     // Temp + CVP
-    y = TOP_H + 372;
+    y = TOP_H + 432;
     painter.label('TEMP', x, y, 12, COLORS.dim);
-    painter.text(`${vitals.tempC.toFixed(1)}°C`, x + 60, y, 18, COLORS.ink, 'left', MONO);
+    painter.text(`${vitals.tempC.toFixed(1)}°C`, x + 58, y + 1, 19, COLORS.ink, 'left', MONO);
     if (vitals.cvp !== undefined) {
-      painter.label('CVP', x + wCol / 2 + 8, y, 12, COLORS.dim);
-      painter.text(String(Math.round(vitals.cvp)), x + wCol / 2 + 58, y, 18, COLORS.ink, 'left', MONO);
+      painter.label('CVP', x + wCol * 0.56, y, 12, COLORS.dim);
+      painter.text(String(Math.round(vitals.cvp)), x + wCol * 0.56 + 46, y + 1, 19, COLORS.ink, 'left', MONO);
     }
   }
 

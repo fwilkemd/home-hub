@@ -18,7 +18,7 @@ import {
   makeSpeckleTiles,
   nearFieldHaze,
   radialGain,
-  speckleMultiply,
+  specklePass,
 } from './us-speckle';
 import { drawProcedural, drawView, defaultFindingsFor, type UsDraw } from './us-views';
 
@@ -88,10 +88,10 @@ export function createUsScreen(engine: EngineHandle): DeviceScreenInstance {
     sctx.save();
     sctx.fillStyle = '#000';
     sctx.fillRect(0, 0, W, H);
-    // faint tissue base so the field is never dead black
+    // tissue base so the field is never dead black
     const base = sctx.createLinearGradient(0, AY, 0, AY + FAN_R);
-    base.addColorStop(0, '#161616');
-    base.addColorStop(1, '#101010');
+    base.addColorStop(0, '#232323');
+    base.addColorStop(1, '#181818');
     sctx.fillStyle = base;
     sctx.fillRect(0, 0, W, H);
 
@@ -113,10 +113,12 @@ export function createUsScreen(engine: EngineHandle): DeviceScreenInstance {
       drawView(d, view, patient.us[view] ?? defaultFindingsFor(view));
     }
 
-    // animated multiplicative speckle: tiles drift slowly, multiply blend
-    speckleMultiply(sctx, tiles[0], 2.6, animT * 4.2, animT * 2.4, W, H, 1);
-    speckleMultiply(sctx, tiles[1], 3.4, -animT * 3.1, animT * 5.0, W, H, 0.62);
-    if (q < 0.85) speckleMultiply(sctx, tiles[2], 2.0, animT * 6.5, -animT * 3.7, W, H, (0.85 - q) * 0.8);
+    // animated speckle: fine multiplicative grain + coarse drift + an additive
+    // shimmer that keeps even the dark field alive
+    specklePass(sctx, tiles[0], 1.45, animT * 4.2, animT * 2.4, W, H, 1);
+    specklePass(sctx, tiles[1], 2.5, -animT * 3.1, animT * 5.0, W, H, 0.5);
+    specklePass(sctx, tiles[0], 1.1, -animT * 6.0, animT * 7.5, W, H, 0.075, 'lighter');
+    if (q < 0.85) specklePass(sctx, tiles[2], 2.0, animT * 6.5, -animT * 3.7, W, H, (0.85 - q) * 0.8);
 
     radialGain(sctx, AX, AY, FAN_R, clamp(us.gain, 0, 1), W, H);
     nearFieldHaze(sctx, AX, AY, FAN_R);

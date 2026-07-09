@@ -10,10 +10,10 @@
 - [x] Unit tests: clock, rng, log, schemas, rubric; smoke: boots with zero console errors
 
 ## Phase 1 — parallel workstreams
-- [ ] A: world (room, patient, player controller, interaction, nurse rig)
-- [ ] B: engine (physiology, pharmacology, labs, rhythms, scenario runtime, nurse tasks, alarms) + placeholder content
-- [ ] C: waveforms + DeviceScreen abstraction + monitor/vent/pump screens
-- [ ] D: EMR shell + HUD + orders pipeline
+- [x] A: world (room, patient, player controller, interaction, nurse rig) — 24 files, 1 shadow light, <300 draw calls
+- [ ] B: engine (physiology, pharmacology, labs, rhythms, scenario runtime, nurse tasks, alarms) + placeholder content — in flight
+- [x] C: waveforms + DeviceScreen abstraction + monitor/vent/pump/US screens + CXR painter — 36 unit tests green
+- [x] D: EMR shell + HUD + orders pipeline + radial verbal orders + debrief + settings + optional LLM chat
 
 ## Phase 2 — vertical slice
 - [ ] Walk room → live monitor → Tab → order pressor → nurse hangs it → MAP responds → alarm resolves → basic US view → scenario end → debrief
