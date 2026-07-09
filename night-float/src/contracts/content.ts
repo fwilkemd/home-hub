@@ -11,7 +11,7 @@ import {
   toolIdSchema,
   usViewIdSchema,
 } from './ids';
-import { examFindingsSchema, patientStateSchema, ventSettingsSchema } from './patient';
+import { auscultationParamsSchema, patientStateSchema } from './patient';
 
 // ================================================================ predicates
 export const cmpOpSchema = z.enum(['lt', 'lte', 'gt', 'gte', 'eq']);
@@ -29,7 +29,15 @@ export type Predicate =
       where?: Record<string, string | number | boolean>;
       withinLastS?: number;
     }
-  | { type: 'sustained'; path: string; op: CmpOp; value: number; seconds: number }
+  | {
+      type: 'sustained';
+      path: string;
+      op: CmpOp;
+      value: number;
+      seconds: number;
+      /** lapses shorter than this don't reset the clock (noise tolerance); default 0 */
+      graceS?: number;
+    }
   | { type: 'and'; conditions: Predicate[] }
   | { type: 'or'; conditions: Predicate[] }
   | { type: 'not'; condition: Predicate };
@@ -56,6 +64,7 @@ export const predicateSchema: z.ZodType<Predicate> = z.lazy(() =>
       op: cmpOpSchema,
       value: z.number(),
       seconds: z.number(),
+      graceS: z.number().optional(),
     }),
     z.object({ type: z.literal('and'), conditions: z.array(predicateSchema) }),
     z.object({ type: z.literal('or'), conditions: z.array(predicateSchema) }),
@@ -92,9 +101,22 @@ const addLineEffect = z.object({
   /** literal site, or "$site" = the site chosen when the procedure started */
   site: z.string(),
 });
+// Sparse patch schemas: hand-built (no .default()s) because zod v4's
+// .partial() still applies inner defaults, which would turn "change nothing"
+// into "reset everything to schema defaults".
+const ventSettingsPatchSchema = z.object({
+  mode: z.enum(['VC', 'PC', 'PS']).optional(),
+  setRr: z.number().optional(),
+  setVtMl: z.number().optional(),
+  peep: z.number().optional(),
+  fio2: z.number().min(0.21).max(1).optional(),
+  pinsp: z.number().optional(),
+  psupp: z.number().optional(),
+});
+
 const setVentEffect = z.object({
   type: z.literal('setVent'),
-  settings: ventSettingsSchema.partial(),
+  settings: ventSettingsPatchSchema,
   connect: z.boolean().optional(),
 });
 const setUsFindingEffect = z.object({
@@ -102,10 +124,17 @@ const setUsFindingEffect = z.object({
   view: usViewIdSchema,
   patch: usPatchSchema,
 });
+const examFindingsPatchSchema = z.object({
+  inspect: z.string().optional(),
+  palpate: z.string().optional(),
+  auscultateText: z.string().optional(),
+  auscultation: auscultationParamsSchema.optional(),
+});
+
 const setExamFindingEffect = z.object({
   type: z.literal('setExamFinding'),
   zone: bodyZoneIdSchema,
-  patch: examFindingsSchema.partial(),
+  patch: examFindingsPatchSchema,
 });
 const setRhythmEffect = z.object({ type: z.literal('setRhythm'), rhythm: rhythmIdSchema });
 

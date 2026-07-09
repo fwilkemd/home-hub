@@ -49,7 +49,7 @@ export function respiratory(p: PhysioCtx, dt: number): void {
   // End-capillary sat rises steeply with FiO2 then plateaus. TODO(MEDICAL).
   const capSat = 100 * (1 - 0.055 * Math.exp(-fio2 / 0.18));
   // Mixed venous sat falls with poor perfusion. TODO(MEDICAL): SvO2 = f(DO2/VO2).
-  const svo2 = 55 + 25 * clamp01(e['perfusionEff'] ?? 0.8);
+  const svo2 = 60 + 22 * clamp01(e['perfusionEff'] ?? 0.8);
   // Venous admixture blend TODO(MEDICAL): real shunt equation over O2 CONTENT.
   let spo2Target = (1 - shunt) * capSat + shunt * svo2;
   if (!isVentilated) spo2Target = Math.min(spo2Target, 42); // apneic slide TODO(MEDICAL)

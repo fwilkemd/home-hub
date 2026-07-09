@@ -1,56 +1,174 @@
 /**
- * Engine entry — createEngine(scenario) -> EngineHandle.
+ * Engine entry — createEngine(scenario) -> EngineHandle (contracts/runtime).
  *
- * PHASE 0 SHELL: clock, log, order stamping, time compression and snapshot
- * cadence are real; physiology/pharmacology/labs/rhythms/scenario-scripting
- * are wired in by the engine workstream (Phase 1B) as modules under
- * src/engine/*. Keep this file free of three/react/zustand imports — enforced
- * by eslint (SPEC §4).
+ * Composition root for the pure simulation: clock, log, RNG streams, and the
+ * subsystems (scenario scripts, pharmacology, vent, physiology, labs, nurse,
+ * bedside, alarms, procedures). Deterministic given a seed: identical
+ * commands at identical sim times replay an identical event log (SPEC §4).
+ * No three/react/zustand imports — enforced by eslint.
  */
-import type {
-  EngineHandle,
-  EngineOptions,
-  EngineSave,
-  ActiveAlarm,
-} from '../contracts/runtime';
+import type { EngineHandle, EngineOptions, EngineSave } from '../contracts/runtime';
 import type { ScenarioFile } from '../contracts/content';
 import type { SimCommand } from '../contracts/commands';
 import type { PatientState, VitalSigns } from '../contracts/patient';
-import type { VentWaveParams, WaveformParams } from '../contracts/waveforms';
 import type { TimeScale } from '../contracts/ids';
+import type { SimEventBody } from '../contracts/events';
+import type { Order, OrderDraft } from '../contracts/orders';
+import { PHYSIOLOGY_DEFAULTS } from '../contracts/patient';
+import { getDrug } from '../data/drugs';
 import { SimClock, TICK_S } from './clock';
 import { EventLog } from './log';
 import { makeRng } from './rng';
+import type { EngineCtx, RngStreams } from './types';
+import { clamp } from './types';
+import { createRhythmMachine } from './rhythms';
+import { createPharmacology } from './pharmacology';
+import { mlHrToDoseRate } from './pharmacology/kinetics';
+import { createVent } from './vent';
+import { createPhysiology, type PhysiologyHandle } from './physiology/integrator';
+import { createEffects } from './scenario/effects';
+import { createScenarioRuntime } from './scenario/script';
+import { createLabs } from './labs';
+import { createBedside } from './bedside';
+import { createNurse } from './nurse';
+import { createAlarms } from './alarms';
+import { createProcedures } from './procedures';
+import { buildWaveformParams } from './params';
+import { handleVerbalOrder } from './verbal';
 
 const VITALS_SNAPSHOT_EVERY_S = 5;
+const RT_RESPONSE_S = 25; // respiratory therapist walk-in delay for vent orders
 
 export function createEngine(scenario: ScenarioFile, opts: EngineOptions = {}): EngineHandle {
   const clock = new SimClock();
   const log = new EventLog();
-  const rng = makeRng(opts.seed ?? scenario.seed);
-  void rng; // used by subsystems (Phase 1B)
+  const root = makeRng(opts.seed ?? scenario.seed);
+  // All streams forked ONCE, fixed labels, before any next() call (SPEC §4).
+  const rng: RngStreams = {
+    physio: root.fork('physio'),
+    labs: root.fork('labs'),
+    complications: root.fork('complications'),
+    rhythm: root.fork('rhythm'),
+    nibp: root.fork('nibp'),
+    nurse: root.fork('nurse'),
+  };
 
   // Deep-clone the scenario's initial patient — the engine owns this object.
   const patient: PatientState = JSON.parse(JSON.stringify(scenario.initialPatient));
+  patient.physiology = { ...PHYSIOLOGY_DEFAULTS, ...patient.physiology };
 
   let ended = false;
-  let orderCounter = 0;
   let lastSnapshotAt = -VITALS_SNAPSHOT_EVERY_S;
+  const idCounters = new Map<string, number>();
+  const pendingRt: Array<{ at: number; order: Order & { kind: 'vent' } }> = [];
 
   if (opts.onEvent) log.onAppend(opts.onEvent);
+
+  // ------------------------------------------------------------------ ctx
+  const ctx: EngineCtx = {
+    scenario,
+    patient,
+    log,
+    clock,
+    rng,
+    effective: { ...patient.physiology },
+    drugTargets: {},
+    emit: (body: SimEventBody) => log.append(clock.simTime, body),
+    now: () => clock.simTime,
+    nextId(prefix: string): string {
+      const n = (idCounters.get(prefix) ?? 0) + 1;
+      idCounters.set(prefix, n);
+      return `${prefix}-${n}`;
+    },
+    dropToRealtime(reason: string): void {
+      if (clock.timeScale <= 1) return;
+      clock.timeScale = 1;
+      ctx.emit({ type: 'TimeScaleChanged', scale: 1, auto: true, reason });
+    },
+    endScenario(outcome, summary): void {
+      if (ended) return;
+      ended = true;
+      log.append(clock.simTime, { type: 'ScenarioEnded', outcome, summary });
+    },
+    isEnded: () => ended,
+    weightKg: () => patient.demographics.weightKg,
+  };
+
+  // ------------------------------------------------------------ subsystems
+  const rhythms = createRhythmMachine(ctx);
+  const pharm = createPharmacology(ctx, rhythms);
+  let physiology: PhysiologyHandle | null = null;
+  const vent = createVent(ctx, () => physiology?.derived.spontRr ?? patient.vitals.rr);
+  physiology = createPhysiology(ctx, vent);
+  const effects = createEffects(ctx, vent, rhythms);
+  const scenarioRt = createScenarioRuntime(ctx, effects);
+  const labs = createLabs(ctx);
+  const bedside = createBedside(ctx);
+  const nurse = createNurse(ctx, pharm, labs, bedside);
+  const alarms = createAlarms(ctx, vent, {
+    onRaised: (a) => {
+      if (a.priority === 'crisis') nurse.onCrisisAlarm(a.label);
+    },
+  });
+  const procedures = createProcedures(ctx, effects);
 
   log.append(0, { type: 'ScenarioStarted', scenarioId: scenario.id, title: scenario.title });
 
   // ------------------------------------------------------------------ tick
   function tick(t: number): void {
     if (ended) return;
-    // Phase 1B: physiology integration, pharmacology, labs queue, rhythm
-    // machine, scenario script + end conditions, nurse tasks, alarms all
-    // advance here (each subsystem gets (patient, dt, t)).
+    const dt = TICK_S;
+    effects.tickRamps(t, dt); // base-param ramps first (scripts own base)
+    scenarioRt.tickScripts(t, dt);
+    // RT applies ordered vent changes after a walk-in delay
+    for (let i = 0; i < pendingRt.length; i++) {
+      if (pendingRt[i].at <= t) {
+        const [due] = pendingRt.splice(i, 1);
+        i--;
+        vent.applySettings(due.order.settings, 'rt');
+        ctx.emit({ type: 'OrderCompleted', orderId: due.order.id });
+      }
+    }
+    pharm.tick(t, dt); // rebuild EFFECTIVE params + drug targets + conversions
+    vent.tick(t, dt);
+    physiology?.tick(t, dt);
+    labs.tick(t, dt);
+    nurse.tick(t, dt);
+    bedside.tick(t, dt);
+    alarms.tick(t, dt);
+    scenarioRt.tickEnd(t, dt);
+    if (ended) return; // froze this tick — no snapshot after the end event
+
     if (t - lastSnapshotAt >= VITALS_SNAPSHOT_EVERY_S) {
       lastSnapshotAt = t;
       log.append(t, { type: 'VitalsSnapshot', vitals: { ...patient.vitals } });
     }
+  }
+
+  // ------------------------------------------------------------------ orders
+  function placeOrder(draft: OrderDraft): Order {
+    const order: Order = {
+      ...draft,
+      id: ctx.nextId('ord'),
+      t: clock.simTime,
+      status: 'active',
+    };
+    ctx.emit({ type: 'OrderPlaced', order: { ...order } });
+    switch (order.kind) {
+      case 'med':
+      case 'lab':
+      case 'nursing':
+        nurse.onOrderPlaced(order);
+        break;
+      case 'imaging':
+        labs.orderImaging(order.id, order.study);
+        break;
+      case 'vent':
+        pendingRt.push({ at: clock.simTime + RT_RESPONSE_S, order });
+        ctx.emit({ type: 'NurseSpeech', say: 'Calling RT for the vent change.' });
+        break;
+    }
+    return order;
   }
 
   // ------------------------------------------------------------------ dispatch
@@ -65,87 +183,116 @@ export function createEngine(scenario: ScenarioFile, opts: EngineOptions = {}): 
         }
         break;
       }
-      case 'PlaceOrder': {
-        const order = {
-          ...cmd.draft,
-          id: `ord-${++orderCounter}`,
-          t,
-          status: 'active' as const,
-        };
-        log.append(t, { type: 'OrderPlaced', order });
+      case 'PlaceOrder':
+        placeOrder(cmd.draft);
+        break;
+      case 'DiscontinueOrder': {
+        ctx.emit({ type: 'OrderDiscontinued', orderId: cmd.orderId });
+        nurse.cancelByOrder(cmd.orderId);
+        // discontinuing an infusion's original order also stops the drip
+        for (const inf of [...patient.infusions]) {
+          if (nurse.orderForInfusion(inf.id) === cmd.orderId) {
+            nurse.enqueueTitrate(inf.id, { stop: true });
+          }
+        }
         break;
       }
-      case 'WriteNote': {
+      case 'ModifyInfusion': {
+        const infusion = patient.infusions.find((i) => i.id === cmd.infusionId);
+        const drug = infusion ? getDrug(infusion.drugId) : undefined;
+        if (!infusion || !drug?.infusion) break;
+        const newRate = clamp(cmd.doseRate, drug.infusion.min, drug.infusion.max);
+        nurse.enqueueTitrate(infusion.id, { newRate });
+        break;
+      }
+      case 'StopInfusion':
+        nurse.enqueueTitrate(cmd.infusionId, { stop: true });
+        break;
+      case 'VerbalOrder':
+        handleVerbalOrder(ctx, nurse, placeOrder, cmd.verbal);
+        break;
+      case 'SilenceAlarm':
+        alarms.silence(cmd.alarmId, cmd.durationS);
+        break;
+      case 'SilenceAllAlarms':
+        alarms.silenceAll(cmd.durationS);
+        break;
+      case 'CycleNibp':
+        ctx.emit({ type: 'PlayerAction', action: 'CycleNibp' });
+        bedside.requestNibp();
+        break;
+      case 'SetVent':
+        vent.applySettings(cmd.settings, cmd.by ?? 'player');
+        break;
+      case 'SetPump': {
+        const ch = patient.devices.pumps.find((c) => c.id === cmd.channelId);
+        if (!ch) break;
+        const infusion = patient.infusions.find((i) => i.channelId === ch.id);
+        if (cmd.rateMlHr !== undefined) {
+          ch.rateMlHr = Math.max(0, cmd.rateMlHr);
+          const drug = infusion ? getDrug(infusion.drugId) : undefined;
+          if (infusion && drug) {
+            infusion.doseRate = mlHrToDoseRate(drug, ch.rateMlHr, ctx.weightKg());
+            ctx.emit({
+              type: 'InfusionRateChanged',
+              infusionId: infusion.id,
+              drugId: drug.id,
+              doseRate: infusion.doseRate,
+              doseUnit: infusion.doseUnit,
+              label: `${drug.name} ${infusion.doseRate} ${infusion.doseUnit} (pump)`,
+            });
+          }
+        }
+        if (cmd.running !== undefined) ch.running = cmd.running;
+        ctx.emit({ type: 'PumpChannelChanged', channel: { ...ch } });
+        break;
+      }
+      case 'PerformExam':
+        bedside.performExam(cmd.zone, cmd.mode);
+        break;
+      case 'EquipTool':
+        ctx.emit({ type: 'PlayerAction', action: 'EquipTool', detail: cmd.tool ?? 'none' });
+        break;
+      case 'UsSetView':
+        bedside.setUsView(cmd.view);
+        break;
+      case 'UsSetQuality':
+        bedside.setUsQuality(cmd.quality);
+        break;
+      case 'UsFreeze':
+        bedside.setUsFrozen(cmd.frozen);
+        break;
+      case 'UsSaveClip':
+        // the dataUrl stays bridge-side (media store); the log carries the id
+        bedside.saveUsClip(cmd.view);
+        break;
+      case 'StartProcedure':
+        procedures.start(cmd.procedureId, cmd.site);
+        break;
+      case 'AdvanceProcedureStep':
+        procedures.advance(cmd.stepId, cmd.skipped);
+        break;
+      case 'AbortProcedure':
+        procedures.abort();
+        break;
+      case 'ContaminateSterileField':
+        procedures.contaminate(cmd.what);
+        break;
+      case 'WriteNote':
         log.append(t, { type: 'NoteWritten', text: cmd.text });
         break;
-      }
-      case 'EndScenario': {
-        endScenario('aborted', 'Scenario ended by the player.');
+      case 'EndScenario':
+        ctx.endScenario('aborted', 'Scenario ended by the player.');
+        break;
+      default: {
+        const exhaustive: never = cmd;
+        void exhaustive;
         break;
       }
-      default:
-        // Remaining commands are implemented by Phase 1B subsystems.
-        log.append(t, { type: 'PlayerAction', action: cmd.type, detail: 'unhandled (phase 0)' });
-        break;
     }
   }
 
-  function endScenario(
-    outcome: 'success' | 'death' | 'timeout' | 'aborted',
-    summary: string,
-  ): void {
-    if (ended) return;
-    ended = true;
-    log.append(clock.simTime, { type: 'ScenarioEnded', outcome, summary });
-  }
-
-  // ------------------------------------------------------------------ views
-  function getWaveformParams(): WaveformParams {
-    const v = patient.vitals;
-    return {
-      beatSeed: scenario.seed,
-      ecg: { rhythm: v.rhythm, rate: v.hr, amplitude: 1, ectopyPerMin: 0 },
-      pleth: { present: true, rate: v.hr, perfusion: 0.8, respSwing: 0.15 },
-      art: {
-        present: patient.lines.some((l) => l.type === 'aline'),
-        rate: v.hr,
-        sbp: v.sbp,
-        dbp: v.dbp,
-        respSwing: 0.15,
-        damped: 0,
-        pulsatile: true,
-      },
-      resp: { rate: v.rr, amplitude: 0.8 },
-      capno: {
-        present: patient.lines.some((l) => l.type === 'ett'),
-        rate: v.rr,
-        etco2: v.etco2 ?? 38,
-        plateauSlope: 0.1,
-      },
-    };
-  }
-
-  function getVentWave(): VentWaveParams {
-    const vent = patient.devices.vent;
-    return {
-      connected: vent.connected,
-      standby: vent.standby,
-      mode: vent.mode,
-      rate: vent.setRr,
-      tiS: 1.0,
-      peep: vent.peep,
-      fio2: vent.fio2,
-      drivePressure: vent.mode === 'VC' ? 12 : vent.pinsp,
-      targetVtMl: vent.setVtMl,
-      measuredVteMl: vent.setVtMl,
-      complianceMlPerCmH2o: patient.physiology.lungComplianceMlPerCmH2o ?? 50,
-      resistanceCmH2oPerLps: patient.physiology.airwayResistanceCmH2oPerLps ?? 10,
-      ppeak: 22,
-      pplat: 18,
-      spontaneous: vent.mode === 'PS',
-    };
-  }
-
+  // ------------------------------------------------------------------ handle
   const handle: EngineHandle = {
     scenario,
     advance(realDtS: number) {
@@ -157,24 +304,33 @@ export function createEngine(scenario: ScenarioFile, opts: EngineOptions = {}): 
     dispatch,
     getPatient: () => patient,
     getVitals: (): VitalSigns => ({ ...patient.vitals }),
-    getWaveformParams,
-    getVentWave,
+    getWaveformParams: () => buildWaveformParams(ctx),
+    getVentWave: () => vent.getWave(),
     getSimTime: () => clock.simTime,
     getTimeScale: () => clock.timeScale as TimeScale,
     getLog: () => log.all(),
-    getActiveAlarms: (): ActiveAlarm[] => [],
-    getBreathPhase: () => {
-      const rr = Math.max(patient.vitals.rr, 4);
-      const period = 60 / rr;
-      return (clock.simTime % period) / period;
-    },
+    getActiveAlarms: () => alarms.getActive(),
+    getBreathPhase: () => physiology?.getBreathPhase() ?? 0,
     isEnded: () => ended,
     serialize: (): EngineSave => ({
       version: 1,
       scenarioId: scenario.id,
       savedAtSim: clock.simTime,
-      blob: { patient, log: log.toJSON(), clock: clock.serialize() },
+      blob: {
+        patient,
+        log: log.toJSON(),
+        clock: clock.serialize(),
+        pharm: pharm.serialize(),
+        labs: labs.serialize(),
+        alarms: alarms.serialize(),
+        scenario: scenarioRt.serialize(),
+        nurse: nurse.serialize(),
+        counters: Object.fromEntries(idCounters),
+      },
     }),
+    getProcedureRuntime: () => procedures.getRuntime(),
+    getNurseView: () => nurse.getView(),
+    getTutorialView: () => scenarioRt.getTutorialView(),
   };
   return handle;
 }

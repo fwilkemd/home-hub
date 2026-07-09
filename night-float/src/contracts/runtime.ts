@@ -276,6 +276,7 @@ export interface NfTestApi {
   getSnapshot(): {
     phase: string;
     simTime: number;
+    engineEnded: boolean | null;
     vitals: VitalSigns | null;
     alarms: ActiveAlarm[];
     orders: Order[];

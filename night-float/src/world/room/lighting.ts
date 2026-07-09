@@ -12,14 +12,14 @@ import { BED, NIGHT_LIGHT, WINDOW, HALF_W } from '../layout';
 export const MOOD = {
   hemiSky: 0x2a3550,
   hemiGround: 0x141118,
-  hemiIntensity: 0.42,
+  hemiIntensity: 0.62,
   spotColor: 0xffd2a0,
-  spotIntensity: 16,
+  spotIntensity: 18,
   windowColor: 0x51759e,
-  windowIntensity: 2.4,
+  windowIntensity: 3.4,
   nightColor: 0xff9a5c,
-  nightIntensity: 0.55,
-  exposure: 1.12,
+  nightIntensity: 0.85,
+  exposure: 1.28,
 } as const;
 
 export function buildLighting(ctx: WorldCtx): void {

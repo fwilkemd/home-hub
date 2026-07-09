@@ -176,6 +176,11 @@ function frame(realDtS: number, realTimeS: number): void {
   }
 }
 
+/** Force an immediate mirror sync (test API — headless frames can be slow). */
+export function syncNow(): void {
+  syncMirrors(true);
+}
+
 function syncMirrors(includePatient: boolean): void {
   if (!session) return;
   const { engine } = session;

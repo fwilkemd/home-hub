@@ -19,7 +19,7 @@ export interface PredicateCtx {
 
 /** Per-run accumulator state for `sustained` nodes (keyed by node identity). */
 export interface PredicateState {
-  sustained: Map<Predicate, number>;
+  sustained: Map<Predicate, { acc: number; lapse: number }>;
 }
 
 export function createPredicateState(): PredicateState {
@@ -94,9 +94,18 @@ export function evalPredicate(
     case 'sustained': {
       const v = resolvePath(ctx, p.path);
       const holding = v !== undefined && cmp(p.op, v, p.value);
-      const acc = holding ? (state.sustained.get(p) ?? 0) + dt : 0;
-      state.sustained.set(p, acc);
-      return acc >= p.seconds - 1e-9;
+      const s = state.sustained.get(p) ?? { acc: 0, lapse: 0 };
+      if (holding) {
+        s.acc += dt;
+        s.lapse = 0;
+      } else {
+        // Lapses up to graceS pause the clock instead of resetting it —
+        // physiologic noise must not make near-threshold sustains unreachable.
+        s.lapse += dt;
+        if (s.lapse > (p.graceS ?? 0) + 1e-9) s.acc = 0;
+      }
+      state.sustained.set(p, s);
+      return s.acc >= p.seconds - 1e-9;
     }
     case 'and': {
       let all = true;

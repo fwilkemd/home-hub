@@ -123,6 +123,8 @@ export function getViewpoint(v: ViewpointId): Viewpoint {
     case 'ultrasound':
       return screenViewpoint('us_machine', 0.45);
     case 'wide':
-      return { pos: new THREE.Vector3(-2.72, 1.78, 2.18), look: new THREE.Vector3(1.0, 0.85, -1.55) };
+      // front-right corner, clear of the curtain: bed + headwall + monitor
+      // glow + window all in frame
+      return { pos: new THREE.Vector3(2.35, 2.0, 2.42), look: new THREE.Vector3(-0.85, 0.85, -1.45) };
   }
 }

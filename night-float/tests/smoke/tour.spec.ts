@@ -49,7 +49,7 @@ test('vertical slice tour', async ({ page }) => {
 
   // workstation opens on the orders tab
   await page.evaluate(() => window.__nf!.openWorkstation('orders'));
-  await expect(page.locator('.emr, [class*="workstation"], [class*="emr"]').first()).toBeVisible();
+  await expect(page.locator('.ws').first()).toBeVisible();
   await page.screenshot({ path: 'screenshots/emr.png' });
 
   // place a med bolus order via the command surface, fast-forward, expect MAR
