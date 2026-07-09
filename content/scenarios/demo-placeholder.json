@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "demo-placeholder",
+  "title": "Demo (medically nonsensical placeholder)",
+  "patient": {
+    "name": "Pat Placeholder",
+    "age": 0,
+    "sex": "unspecified",
+    "weightKg": 0,
+    "chartNote": "Placeholder chart note. Every value in this file is deliberately nonsensical demo data authored to exercise the engine — do not treat as clinical content.",
+    "history": ["placeholder history item"],
+    "homeMeds": ["placeholder home med"]
+  },
+  "customVars": [
+    { "name": "analyteQ", "initial": 4.0, "setpoint": 6.0, "ratePerMin": 0.05 }
+  ],
+  "initial": {
+    "vitals": { "hr": 118, "sbp": 84, "dbp": 46, "spo2": 91, "rr": 26, "tempC": 38.9, "rhythm": "sinus" },
+    "grants": []
+  },
+  "drift": {
+    "hr": { "setpoint": 145, "ratePerMin": 2.0 },
+    "sbp": { "setpoint": 70, "ratePerMin": -1.0 },
+    "dbp": { "setpoint": 40, "ratePerMin": -0.5 },
+    "spo2": { "setpoint": 86, "ratePerMin": -0.4 }
+  },
+  "timeLimitSec": 1800
+}

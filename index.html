@@ -2,20 +2,59 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Home Hub</title>
-
-    <!-- Inline favicon (a charcoal-plum tile) so the kiosk makes no extra request. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ICU VR Simulator</title>
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23141019'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%237C5CFF'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2304070a'/%3E%3Cpath d='M1 9h3l1.5-4 2 7 2-5 1 2H15' stroke='%233ce06a' stroke-width='1.4' fill='none'/%3E%3C/svg%3E"
     />
-
-    <!-- Fonts (Fraunces, Inter, Space Mono) are bundled via @fontsource in main.jsx,
-         so the hub renders identically with no network. -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0b0e11;
+        color: #dbe3e8;
+        font-family: system-ui, sans-serif;
+      }
+      canvas {
+        display: block;
+      }
+      #hud {
+        position: fixed;
+        top: 12px;
+        left: 14px;
+        pointer-events: none;
+        line-height: 1.5;
+      }
+      #hud strong {
+        font-size: 14px;
+        letter-spacing: 0.04em;
+      }
+      #hud div {
+        font-size: 12px;
+        opacity: 0.75;
+        font-family: ui-monospace, monospace;
+      }
+      #hint {
+        position: fixed;
+        bottom: 64px;
+        width: 100%;
+        text-align: center;
+        font-size: 13px;
+        opacity: 0.65;
+        pointer-events: none;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <div id="hud">
+      <strong>ICU VR SIM — M1</strong>
+      <div id="scenario-title"></div>
+      <div id="sim-clock">sim 00:00</div>
+    </div>
+    <div id="hint">Click to look around — WASD to move — or Enter VR below</div>
+    <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>
