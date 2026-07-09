@@ -13,6 +13,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 export const ROOM = { width: 5.2, depth: 5.2, height: 2.7 }
 export const MONITOR_POS = new THREE.Vector3(0, 1.9, -ROOM.depth / 2 + 0.06)
 export const CLOCK_POS = new THREE.Vector3(-ROOM.width / 2 + 0.05, 2.0, 0.6)
+/** Bed reference coords other modules hang things on (exam colliders, panels). */
+export const BED = { x: 0, headZ: -ROOM.depth / 2 + 0.35, centerZ: -ROOM.depth / 2 + 0.35 + 1.05 }
+export const TABLET_POS = new THREE.Vector3(1.15, 1.05, BED.centerZ + 0.45)
 
 const PALETTE = {
   floor: 0x36414a,
@@ -31,7 +34,7 @@ const PALETTE = {
   clockFace: 0xf2efe8,
 }
 
-export function buildRoom(scene: THREE.Scene): { monitorScreen: THREE.Mesh } {
+export function buildRoom(scene: THREE.Scene): { monitorScreen: THREE.Mesh; tabletScreen: THREE.Mesh } {
   const buckets = new Map<number, THREE.BufferGeometry[]>()
 
   const add = (geo: THREE.BufferGeometry, color: number, x: number, y: number, z: number, ry = 0) => {
@@ -109,9 +112,6 @@ export function buildRoom(scene: THREE.Scene): { monitorScreen: THREE.Mesh } {
   const tablet = new THREE.BoxGeometry(0.34, 0.24, 0.02)
   tablet.rotateX(-0.5)
   add(tablet, PALETTE.equipment, 1.15, 1.05, bedCenterZ + 0.45, -0.6)
-  const tabletScreen = new THREE.BoxGeometry(0.3, 0.2, 0.005)
-  tabletScreen.rotateX(-0.5)
-  add(tabletScreen, PALETTE.screenOff, 1.15, 1.055, bedCenterZ + 0.46, -0.6)
 
   // Wall clock face on the west wall (sim-time text is a troika Text added in main)
   const clockFace = new THREE.CylinderGeometry(0.16, 0.16, 0.03, 24)
@@ -134,6 +134,17 @@ export function buildRoom(scene: THREE.Scene): { monitorScreen: THREE.Mesh } {
   monitorScreen.position.set(MONITOR_POS.x, MONITOR_POS.y, MONITOR_POS.z + 0.055)
   scene.add(monitorScreen)
 
+  // Tablet screen stays its own mesh — it's the tap target that opens the
+  // order panel and it highlights on hover.
+  const tabletScreen = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 0.2, 0.006),
+    new THREE.MeshBasicMaterial({ color: 0x10222b }),
+  )
+  tabletScreen.name = 'tablet'
+  tabletScreen.rotation.set(-0.5, -0.6, 0, 'YXZ')
+  tabletScreen.position.set(TABLET_POS.x, TABLET_POS.y + 0.006, TABLET_POS.z + 0.012)
+  scene.add(tabletScreen)
+
   // Lighting: hemisphere + one directional, no shadows
   scene.add(new THREE.HemisphereLight(0xdce8ef, 0x2c343a, 1.05))
   const sun = new THREE.DirectionalLight(0xfff4e0, 0.9)
@@ -142,5 +153,5 @@ export function buildRoom(scene: THREE.Scene): { monitorScreen: THREE.Mesh } {
 
   scene.background = new THREE.Color(0x0b0e11)
 
-  return { monitorScreen }
+  return { monitorScreen, tabletScreen }
 }

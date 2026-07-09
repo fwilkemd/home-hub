@@ -10,12 +10,15 @@ export class DesktopControls {
   private readonly controls: PointerLockControls
   private readonly keys = new Set<string>()
   private readonly velocity = new THREE.Vector3()
+  /** When set, clicking only grabs the pointer if this returns true (so
+   *  clicks on interactive things select them instead of locking). */
+  lockGate: (() => boolean) | null = null
 
   constructor(camera: THREE.PerspectiveCamera, domElement: HTMLElement) {
     this.controls = new PointerLockControls(camera, domElement)
 
     domElement.addEventListener('click', () => {
-      if (!this.controls.isLocked) this.controls.lock()
+      if (!this.controls.isLocked && (this.lockGate?.() ?? true)) this.controls.lock()
     })
     document.addEventListener('keydown', (e) => this.keys.add(e.code))
     document.addEventListener('keyup', (e) => this.keys.delete(e.code))

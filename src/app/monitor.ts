@@ -35,12 +35,25 @@ interface Row {
   prevY: number | null
 }
 
+export interface MonitorStatus {
+  /** Sim time in seconds (drives NIBP cycling and alarm flash phase). */
+  time: number
+  alarmed: string[]
+  silenced: boolean
+}
+
+const NIBP_CYCLE_SEC = 180
+
 export class PatientMonitor {
   readonly texture: THREE.CanvasTexture
 
   private readonly ctx: CanvasRenderingContext2D
   private vitals: Record<string, number> = {}
   private rhythm: RhythmToken = 'sinus'
+  private status: MonitorStatus = { time: 0, alarmed: [], silenced: false }
+  /** arterialLine=false → BP numerics only refresh every NIBP cycle. */
+  private readonly arterialLine: boolean
+  private nibp: { sbp?: number; dbp?: number; map?: number; at: number } = { at: 0 }
 
   /** Waveform clock in sim-rate seconds (advances with timeScale). */
   private waveClock = 0
@@ -56,7 +69,8 @@ export class PatientMonitor {
     { label: 'RESP', color: COLORS.resp, yCenter: 420, amp: 50, prevY: null },
   ]
 
-  constructor() {
+  constructor(opts: { arterialLine?: boolean } = {}) {
+    this.arterialLine = opts.arterialLine ?? true
     const canvas = document.createElement('canvas')
     canvas.width = W
     canvas.height = H
@@ -72,9 +86,16 @@ export class PatientMonitor {
   }
 
   /** Called at 1 Hz with fresh sim values; redraws the numerics column. */
-  setVitals(vitals: Record<string, number>, rhythm: RhythmToken): void {
+  setVitals(vitals: Record<string, number>, rhythm: RhythmToken, status?: MonitorStatus): void {
     this.vitals = vitals
     this.rhythm = rhythm
+    if (status) this.status = status
+    if (!this.arterialLine) {
+      // NIBP mode: latch a BP reading only at each cuff cycle.
+      if (this.nibp.sbp === undefined || this.status.time - this.nibp.at >= NIBP_CYCLE_SEC) {
+        this.nibp = { sbp: vitals.sbp, dbp: vitals.dbp, map: vitals.map, at: this.status.time }
+      }
+    }
     this.drawNumerics()
     this.texture.needsUpdate = true
   }
@@ -235,6 +256,9 @@ export class PatientMonitor {
     ctx.fillRect(x0, 0, 2, H)
 
     const v = this.vitals
+    const alarmed = new Set(this.status.alarmed)
+    // Alarm flash: alternate color each sim second while unsilenced.
+    const flashOn = this.status.time % 2 === 0 && !this.status.silenced
     const fmt = (n: number | undefined, digits = 0) =>
       n === undefined || Number.isNaN(n) ? '--' : n.toFixed(digits)
 
@@ -243,6 +267,7 @@ export class PatientMonitor {
       label: string,
       value: string,
       color: string,
+      inAlarm: boolean,
       sub?: string,
     ) => {
       ctx.textAlign = 'left'
@@ -250,26 +275,47 @@ export class PatientMonitor {
       ctx.font = '600 19px monospace'
       ctx.fillStyle = COLORS.label
       ctx.fillText(label, x0 + 20, y)
+      if (inAlarm && flashOn) {
+        ctx.fillStyle = '#e33d2e'
+        ctx.fillRect(x0 + 12, y + 22, W - x0 - 24, 62)
+        ctx.fillStyle = '#0a0d0f'
+      } else {
+        ctx.fillStyle = inAlarm ? '#ff5040' : color
+      }
       ctx.font = '700 58px monospace'
-      ctx.fillStyle = color
       ctx.fillText(value, x0 + 20, y + 24)
       if (sub) {
         ctx.font = '600 22px monospace'
-        ctx.fillStyle = color
-        ctx.fillText(sub, x0 + 20, y + 84)
+        ctx.fillStyle = inAlarm ? '#ff5040' : color
+        ctx.fillText(sub, x0 + 132, y + 44)
       }
     }
 
-    block(14, `HR  ${this.rhythm.toUpperCase()}`, fmt(v.hr), COLORS.ecg)
-    block(124, 'NIBP  mmHg', `${fmt(v.sbp)}/${fmt(v.dbp)}`, COLORS.bp, `(${fmt(v.map)})`)
-    block(258, 'SpO2  %', fmt(v.spo2), COLORS.pleth)
-    block(368, 'RR  /min', fmt(v.rr), COLORS.resp)
+    const bpAlarmed = alarmed.has('map') || alarmed.has('sbp') || alarmed.has('dbp')
+    const bp = this.arterialLine ? v : this.nibp
+    block(14, `HR  ${this.rhythm.toUpperCase()}`, fmt(v.hr), COLORS.ecg, alarmed.has('hr'))
+    block(
+      124,
+      this.arterialLine ? 'ART  mmHg' : `NIBP q3m  mmHg`,
+      `${fmt(bp.sbp)}/${fmt(bp.dbp)}`,
+      COLORS.bp,
+      bpAlarmed,
+      `(${fmt(bp.map)})`,
+    )
+    block(258, 'SpO2  %', fmt(v.spo2), COLORS.pleth, alarmed.has('spo2'))
+    block(368, 'RR  /min', fmt(v.rr), COLORS.resp, alarmed.has('rr'))
 
     ctx.font = '600 19px monospace'
     ctx.fillStyle = COLORS.label
-    ctx.fillText('TEMP  °C', x0 + 20, 462)
+    ctx.fillText('TEMP  °C', x0 + 20, 468)
     ctx.font = '700 34px monospace'
-    ctx.fillStyle = COLORS.temp
-    ctx.fillText(fmt(v.tempC, 1), x0 + 150, 456)
+    ctx.fillStyle = alarmed.has('tempC') ? '#ff5040' : COLORS.temp
+    ctx.fillText(fmt(v.tempC, 1), x0 + 150, 462)
+
+    if (this.status.silenced) {
+      ctx.font = '700 20px monospace'
+      ctx.fillStyle = '#ffb54a'
+      ctx.fillText('SILENCED', x0 + 130, 4)
+    }
   }
 }

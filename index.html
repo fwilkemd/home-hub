@@ -46,15 +46,30 @@
         opacity: 0.65;
         pointer-events: none;
       }
+      #crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 6px;
+        height: 6px;
+        margin: -3px 0 0 -3px;
+        border-radius: 50%;
+        background: #dff2f8;
+        opacity: 0.85;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
-    <div id="hud">
-      <strong>ICU VR SIM — M1</strong>
+    <div id="hud" style="display: none">
+      <strong>ICU VR SIM</strong>
       <div id="scenario-title"></div>
       <div id="sim-clock">sim 00:00</div>
     </div>
-    <div id="hint">Click to look around — WASD to move — or Enter VR below</div>
+    <div id="hint" style="display: none">
+      Click a thing to select it — click empty space to mouse-look (WASD moves) — Esc releases — or Enter VR below
+    </div>
+    <div id="crosshair" style="display: none"></div>
     <script type="module" src="/src/app/main.ts"></script>
   </body>
 </html>

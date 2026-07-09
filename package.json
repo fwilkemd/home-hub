@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:host": "vite --host --mode https",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run typecheck && vite build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.cli.json",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -20,6 +21,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "@types/three": "^0.185.1",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "tsx": "^4.23.0",

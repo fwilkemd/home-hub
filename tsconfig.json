@@ -12,5 +12,6 @@
     "skipLibCheck": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "content"]
+  "include": ["src", "content"],
+  "exclude": ["src/cli"]
 }
