@@ -17,7 +17,9 @@ const SWITCH_HYSTERESIS = 1.15;
 
 export function createProbe(ctx: WorldCtx, rig: PatientRig): Updater {
   const raycaster = new THREE.Raycaster();
-  raycaster.far = NEAR_RANGE;
+  // proximity is gated on camera<->patient distance (NEAR_RANGE); the ray may
+  // land on a surface point slightly beyond it, so give the ray extra reach
+  raycaster.far = NEAR_RANGE + 0.7;
   // patient body-zone boxes double as the scannable surface
   const surface = ctx.reg.colliders.filter((c) =>
     String(c.userData.nfInteractId ?? '').startsWith('zone_'),

@@ -7,7 +7,6 @@ import * as THREE from 'three';
 import type { LineType } from '../../contracts/ids';
 import type { WorldCtx, Updater } from '../types';
 import { IV_POLE, PATIENT } from '../layout';
-import { tubeBetween } from '../lib';
 
 const tubeMat = (): THREE.MeshStandardMaterial =>
   new THREE.MeshStandardMaterial({ color: 0xd6dade, roughness: 0.5, transparent: true, opacity: 0.9 });

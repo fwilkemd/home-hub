@@ -59,7 +59,6 @@ export class SweepLane {
       // huge time jump — restart the sweep rather than looping many times
       this.clear();
       dx = 1;
-      t0 = t1 - 1 / pxPerSec;
     }
     const c = this.tcx;
     // erase the strip we are about to draw plus the gap ahead of the head
