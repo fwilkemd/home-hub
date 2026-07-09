@@ -13,6 +13,8 @@ import { Toasts } from './hud/Cards';
 import { Workstation } from './emr/Workstation';
 import { ZoomOverlay } from './ZoomOverlay';
 import { RadialMenu } from './RadialMenu';
+import { SitePicker } from './procedures/SitePicker';
+import { ProcedureOverlayHost } from './procedures/ProcedureOverlayHost';
 import { DebriefScreen } from './DebriefScreen';
 import { equipTool, HOTBAR_TOOLS, stepTimeScale, togglePause } from './tools';
 
@@ -50,10 +52,13 @@ function RunningLayer() {
   const llmOn = useHub((s) => s.settings.llmEnabled && s.settings.llmKey.trim().length > 0);
   return (
     <>
+      {/* before the HUD so crosshair + procedure panel paint above it */}
+      <ProcedureOverlayHost />
       <Hud />
       {workstationOpen && <Workstation />}
       {zoomDevice !== null && <ZoomOverlay device={zoomDevice} />}
       {radialOpen && <RadialMenu />}
+      <SitePicker />
       {llmOn && (
         <Suspense fallback={null}>
           <ChatDock />

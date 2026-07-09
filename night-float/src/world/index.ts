@@ -27,6 +27,7 @@ import { createPlayer } from './player/controller';
 import { createHover } from './interact/hover';
 import { createHeldTool } from './interact/held-tool';
 import { createProbe } from './interact/probe';
+import { createProcedureGesture } from './interact/procedure-gesture';
 
 export function createWorld(deps: WorldDeps): WorldHandle {
   const scene = new THREE.Scene();
@@ -59,10 +60,16 @@ export function createWorld(deps: WorldDeps): WorldHandle {
   updaters.push(createNurse(ctx));
 
   const hover = createHover(ctx);
+  const gesture = createProcedureGesture(ctx, patient.center);
   const player = createPlayer(ctx, (i) => {
+    // an active hold step owns E — never fall through to hover actions
+    if (i === 0 && gesture.capturesE()) return;
     const action = hover.actionAt(i);
-    if (action) deps.onAction(action);
+    if (!action) return;
+    gesture.noteWorldAction(hubStore.getState().hover); // sterile field (SPEC §9.2)
+    deps.onAction(action);
   });
+  updaters.push(gesture.update);
   updaters.push(createHeldTool(ctx));
   updaters.push(createProbe(ctx, patient));
 
@@ -128,6 +135,7 @@ export function createWorld(deps: WorldDeps): WorldHandle {
 
     dispose(): void {
       player.dispose();
+      gesture.dispose();
       hover.clear();
       resizeObserver?.disconnect();
       resizeObserver = null;

@@ -39,6 +39,23 @@ import { handleVerbalOrder } from './verbal';
 const VITALS_SNAPSHOT_EVERY_S = 5;
 const RT_RESPONSE_S = 25; // respiratory therapist walk-in delay for vent orders
 
+/** Typed shape of EngineSave.blob (engine-owned; see serialize/restore). */
+interface EngineBlob {
+  patient: PatientState;
+  log: import('../contracts/events').SimEvent[];
+  clock: { simTime: number; timeScale: TimeScale };
+  pharm: Record<string, number>;
+  labs: ReturnType<import('./labs').LabsHandle['serialize']>;
+  alarms: ReturnType<import('./alarms').AlarmsHandle['serialize']>;
+  scenario: { fired: string[]; tutorialIndex: number };
+  nurse: { queue: number; busyWith: string | null };
+  effects: import('./scenario/effects').Ramp[];
+  rng: Record<keyof RngStreams, number>;
+  counters: Record<string, number>;
+  lastSnapshotAt: number;
+  ended: boolean;
+}
+
 export function createEngine(scenario: ScenarioFile, opts: EngineOptions = {}): EngineHandle {
   const clock = new SimClock();
   const log = new EventLog();
@@ -112,7 +129,31 @@ export function createEngine(scenario: ScenarioFile, opts: EngineOptions = {}): 
   });
   const procedures = createProcedures(ctx, effects);
 
-  log.append(0, { type: 'ScenarioStarted', scenarioId: scenario.id, title: scenario.title });
+  if (!opts.restore) {
+    log.append(0, { type: 'ScenarioStarted', scenarioId: scenario.id, title: scenario.title });
+  } else {
+    // Slice-level restore (see DECISIONS.md): patient/log/clock/PK levels/
+    // lab queues/alarms/script+ramp state/RNG streams come back; in-flight
+    // nurse tasks and active procedures do not (saving is blocked mid-
+    // procedure by the UI). Physiology noise streams restart harmlessly.
+    const blob = opts.restore.blob as EngineBlob;
+    for (const k of Object.keys(patient)) delete (patient as Record<string, unknown>)[k];
+    Object.assign(patient, JSON.parse(JSON.stringify(blob.patient)));
+    clock.restore(blob.clock);
+    log.restore(blob.log);
+    pharm.restore(blob.pharm);
+    labs.restore(blob.labs);
+    alarms.restore(blob.alarms);
+    scenarioRt.restore(blob.scenario);
+    effects.restore(blob.effects ?? []);
+    for (const key of Object.keys(rng) as (keyof RngStreams)[]) {
+      const s = blob.rng?.[key];
+      if (s !== undefined) rng[key].setState(s);
+    }
+    for (const [k, v] of Object.entries(blob.counters ?? {})) idCounters.set(k, v);
+    lastSnapshotAt = blob.lastSnapshotAt ?? clock.simTime;
+    ended = blob.ended ?? false;
+  }
 
   // ------------------------------------------------------------------ tick
   function tick(t: number): void {
@@ -325,8 +366,14 @@ export function createEngine(scenario: ScenarioFile, opts: EngineOptions = {}): 
         alarms: alarms.serialize(),
         scenario: scenarioRt.serialize(),
         nurse: nurse.serialize(),
+        effects: effects.serialize(),
+        rng: Object.fromEntries(
+          (Object.keys(rng) as (keyof RngStreams)[]).map((k) => [k, rng[k].getState()]),
+        ) as Record<keyof RngStreams, number>,
         counters: Object.fromEntries(idCounters),
-      },
+        lastSnapshotAt,
+        ended,
+      } satisfies EngineBlob,
     }),
     getProcedureRuntime: () => procedures.getRuntime(),
     getNurseView: () => nurse.getView(),

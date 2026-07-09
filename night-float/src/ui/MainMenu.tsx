@@ -1,8 +1,17 @@
 /**
- * Main menu: title treatment, scenario cards, controls card, settings.
+ * Main menu: title treatment, scenario cards, resume-save card, controls,
+ * settings.
  */
-import { listScenarios, startScenario } from '../bridge/session';
+import { useState } from 'react';
+import {
+  clearSavedGame,
+  getSavedGame,
+  listScenarios,
+  loadSavedGame,
+  startScenario,
+} from '../bridge/session';
 import { hubActions } from '../bridge/store';
+import { wallClock } from './format';
 
 const MENU_CONTROLS: ReadonlyArray<readonly [string, string]> = [
   ['WASD', 'move'],
@@ -27,11 +36,39 @@ function start(id: string): void {
 
 export function MainMenu() {
   const items = listScenarios();
+  const [save, setSave] = useState(() => getSavedGame());
   return (
     <div className="menu">
       <div className="menu-inner">
         <h1 className="menu-title">NIGHT FLOAT</h1>
         <p className="menu-sub">first-person ICU simulation</p>
+
+        {save && (
+          <div className="menu-resume">
+            <button
+              className="menu-card menu-card-resume"
+              onClick={() => {
+                loadSavedGame().catch(() => {
+                  hubActions.toast('Could not load the save.', 'alarm', 6000);
+                });
+              }}
+            >
+              <span className="menu-card-title">Resume — {save.title}</span>
+              <span className="menu-card-line">
+                saved at {wallClock(save.clockStart, save.savedAtSim)}
+              </span>
+            </button>
+            <button
+              className="btn btn-quiet"
+              onClick={() => {
+                clearSavedGame();
+                setSave(null);
+              }}
+            >
+              Discard
+            </button>
+          </div>
+        )}
 
         <div className="menu-cards">
           {items.length === 0 && (

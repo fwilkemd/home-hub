@@ -14,6 +14,7 @@ export interface ScenarioRuntimeHandle {
   tickEnd(t: number, dt: number): void;
   getTutorialView(): TutorialView | null;
   serialize(): { fired: string[]; tutorialIndex: number };
+  restore(state: { fired: string[]; tutorialIndex: number }): void;
 }
 
 export function createScenarioRuntime(
@@ -95,5 +96,12 @@ export function createScenarioRuntime(
     tickEnd,
     getTutorialView,
     serialize: () => ({ fired: [...fired], tutorialIndex }),
+    restore: (state) => {
+      fired.clear();
+      for (const id of state.fired) fired.add(id);
+      tutorialIndex = state.tutorialIndex;
+      // NOTE: `sustained` accumulators restart at 0 after a load — stability
+      // clocks re-arm rather than resuming mid-count (slice-level save).
+    },
   };
 }

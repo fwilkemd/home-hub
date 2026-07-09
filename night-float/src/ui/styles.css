@@ -1030,6 +1030,103 @@ h2.chart-oneliner { margin: 0 0 12px; font-size: 19px; font-weight: 650; }
 .chat-inputrow .input { flex: 1; }
 .chat-hint { padding: 0 12px 9px; color: var(--faint); font-size: 11px; }
 
+/* ------------------------------------------------------------ procedures */
+/* site picker (dialog primitives do the chrome) */
+.sitepicker { width: 430px; }
+.sitepicker-brief { color: var(--dim); font-size: 13px; }
+.sitepicker-meta { display: flex; gap: 7px; flex-wrap: wrap; }
+.sitepicker-sites { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sitebtn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg2);
+  font-size: 13.5px;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.sitebtn:hover { border-color: #35405f; }
+.sitebtn.sel { border-color: rgba(53, 213, 232, 0.55); background: rgba(53, 213, 232, 0.09); color: var(--acc); }
+.sitepicker-keys { margin-right: auto; align-self: center; }
+
+/* live hold ring + gesture hint on the procedure panel */
+.holdring-live { flex: none; display: block; }
+.procgesture {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+/* laryngoscope view: transparent full-screen click-catcher (so stray clicks
+   can't re-grab pointer lock mid-slider) under the HUD in paint order */
+.laryng-veil {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  animation: fadein 160ms ease;
+}
+.laryng-frame {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg0);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.laryng-canvas { display: block; width: min(896px, 62vw, 118vh); height: auto; background: #120708; }
+.laryng-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  min-height: 46px;
+}
+.laryng-depth { min-width: 62px; color: var(--acc); font-size: 13.5px; }
+.laryng-slider { position: relative; flex: 1; display: flex; align-items: center; height: 22px; }
+.laryng-slider input[type='range'] {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: 0;
+  accent-color: var(--acc);
+  background: transparent;
+}
+.laryng-band {
+  position: absolute;
+  top: 50%;
+  height: 12px;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: rgba(46, 230, 107, 0.16);
+  border: 1px solid rgba(46, 230, 107, 0.45);
+  pointer-events: none;
+}
+.laryng-reopen {
+  position: fixed;
+  left: 50%;
+  bottom: 84px;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  border: 1px solid rgba(53, 213, 232, 0.5);
+  border-radius: 999px;
+  background: rgba(11, 14, 20, 0.88);
+  color: var(--acc);
+  font-size: 12.5px;
+  pointer-events: auto;
+  animation: fadein 160ms ease;
+}
+.laryng-reopen:hover { background: rgba(53, 213, 232, 0.1); }
+
 /* ------------------------------------------------------------ animation */
 @keyframes fadein {
   from { opacity: 0; transform: translateY(-3px); }
@@ -1052,4 +1149,22 @@ h2.chart-oneliner { margin: 0 0 12px; font-size: 19px; font-weight: 650; }
     animation-iteration-count: 1 !important;
     transition-duration: 0.001s !important;
   }
+}
+
+/* ---- resume-save card (main menu) ---- */
+.menu-resume {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.menu-card-resume {
+  border-color: #2e6d5c;
+  background: linear-gradient(180deg, rgba(46, 230, 107, 0.08), rgba(18, 23, 34, 0.9));
+}
+.btn-quiet {
+  opacity: 0.65;
+}
+.btn-quiet:hover {
+  opacity: 1;
 }

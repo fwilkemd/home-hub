@@ -25,6 +25,8 @@ export interface EngineOptions {
   seed?: number;
   /** called synchronously for every appended SimEvent */
   onEvent?: (e: SimEvent) => void;
+  /** resume from a serialized save (see EngineHandle.serialize) */
+  restore?: EngineSave;
 }
 
 export interface EngineSave {

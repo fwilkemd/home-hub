@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { hubActions, useHub } from '../bridge/store';
-import { backToMenu } from '../bridge/session';
+import { backToMenu, saveGame } from '../bridge/session';
 import { CONTROLS, downloadLog } from './format';
 import { IconX } from './icons';
 
@@ -36,6 +36,7 @@ function VolRow({
 export function SettingsModal() {
   const settings = useHub((s) => s.settings);
   const phase = useHub((s) => s.phase);
+  const procedureActive = useHub((s) => s.procedure !== null);
   const [showControls, setShowControls] = useState(false);
 
   // While running, the global handler owns Esc; cover the other phases here.
@@ -132,6 +133,27 @@ export function SettingsModal() {
           <button className="btn" onClick={downloadLog}>
             Export event log
           </button>
+          {phase === 'running' && (
+            <button
+              className="btn"
+              disabled={procedureActive}
+              title={procedureActive ? 'Finish or abort the procedure first' : undefined}
+              onClick={() => {
+                const result = saveGame();
+                hubActions.toast(
+                  result === 'saved'
+                    ? 'Game saved — resume from the main menu.'
+                    : result === 'blocked'
+                      ? 'Cannot save mid-procedure.'
+                      : 'Save failed (storage unavailable).',
+                  result === 'saved' ? 'success' : 'alarm',
+                  4000,
+                );
+              }}
+            >
+              Save game
+            </button>
+          )}
           {phase !== 'menu' && (
             <button className="btn danger" onClick={quit}>
               Quit to menu

@@ -12,6 +12,22 @@ import { paintCxr, takeClipDataUrl } from './media';
 
 const FLOWSHEET_CAP = 6000; // ~8h of 5s snapshots
 
+/**
+ * Save/load: rebuild the store's accumulated records (orders, MAR, results,
+ * flowsheet, media, notes) by replaying the restored log — with user-facing
+ * side effects (toasts, chimes, speech bubbles, exam cards) suppressed.
+ */
+let replaying = false;
+
+export function replayLogIntoStore(engine: EngineHandle): void {
+  replaying = true;
+  try {
+    for (const e of engine.getLog()) applySimEvent(e, engine);
+  } finally {
+    replaying = false;
+  }
+}
+
 function pushMar(entry: Omit<MarEntry, 'id'>): void {
   hubStore.setState((s) => ({
     mar: [...s.mar, { ...entry, id: `mar-${s.mar.length + 1}` }],
@@ -118,7 +134,7 @@ export function applySimEvent(e: SimEvent, engine: EngineHandle): void {
 
     // ------------------------------------------------------------ alarms
     case 'AlarmRaised':
-      if (e.priority === 'crisis' || e.priority === 'warning') {
+      if (!replaying && (e.priority === 'crisis' || e.priority === 'warning')) {
         hubActions.toast(e.label, 'alarm', 6000);
       }
       break;
@@ -153,13 +169,15 @@ export function applySimEvent(e: SimEvent, engine: EngineHandle): void {
           },
         ],
       }));
-      const abnormal = e.results.filter((r) => r.flag !== 'normal').length;
-      hubActions.toast(
-        `${e.panelName} resulted${abnormal ? ` — ${abnormal} abnormal` : ''}`,
-        'info',
-        6000,
-      );
-      if (e.stat) bus.emit('chime', { kind: 'result' });
+      if (!replaying) {
+        const abnormal = e.results.filter((r) => r.flag !== 'normal').length;
+        hubActions.toast(
+          `${e.panelName} resulted${abnormal ? ` — ${abnormal} abnormal` : ''}`,
+          'info',
+          6000,
+        );
+        if (e.stat) bus.emit('chime', { kind: 'result' });
+      }
       break;
     }
     case 'ImagingResulted': {
@@ -173,15 +191,17 @@ export function applySimEvent(e: SimEvent, engine: EngineHandle): void {
         findingsText: e.findingsText,
       };
       hubStore.setState((s) => ({ media: [...s.media, item] }));
-      hubActions.toast(`${e.study.toUpperCase()} resulted`, 'info', 6000);
+      if (!replaying) hubActions.toast(`${e.study.toUpperCase()} resulted`, 'info', 6000);
       break;
     }
 
     // ------------------------------------------------------------ bedside
     case 'ExamPerformed':
-      hubStore.setState({
-        lastExam: { zone: e.zone, mode: e.mode, text: e.findingsText, untilReal: Date.now() + 9000 },
-      });
+      if (!replaying) {
+        hubStore.setState({
+          lastExam: { zone: e.zone, mode: e.mode, text: e.findingsText, untilReal: Date.now() + 9000 },
+        });
+      }
       break;
     case 'UsViewChanged':
       // the US screen renders store.us.activeView — mirror the engine's view
@@ -212,21 +232,23 @@ export function applySimEvent(e: SimEvent, engine: EngineHandle): void {
     // ------------------------------------------------------------ machinery
     case 'TimeScaleChanged':
       hubStore.setState({ timeScale: e.scale });
-      if (e.auto) {
+      if (e.auto && !replaying) {
         bus.emit('chime', { kind: 'timeDrop' });
         if (e.reason) hubActions.toast(`Dropped to 1× — ${e.reason}`, 'info', 4000);
       }
       break;
     case 'ScenarioScriptedEvent':
-      if (e.label) hubActions.toast(e.label, 'info', 6000);
+      if (e.label && !replaying) hubActions.toast(e.label, 'info', 6000);
       break;
     case 'NurseSpeech':
-      hubStore.setState((s) => ({
-        nurse: { ...s.nurse, say: e.say, sayUntilReal: Date.now() + 6000 },
-      }));
+      if (!replaying) {
+        hubStore.setState((s) => ({
+          nurse: { ...s.nurse, say: e.say, sayUntilReal: Date.now() + 6000 },
+        }));
+      }
       break;
     case 'NurseAction':
-      if (e.say) {
+      if (e.say && !replaying) {
         hubStore.setState((s) => ({
           nurse: { ...s.nurse, say: e.say ?? null, sayUntilReal: Date.now() + 6000 },
         }));
@@ -237,5 +259,5 @@ export function applySimEvent(e: SimEvent, engine: EngineHandle): void {
       break;
   }
 
-  bus.emit('simEvent', e);
+  if (!replaying) bus.emit('simEvent', e);
 }

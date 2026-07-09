@@ -12,7 +12,7 @@ import { getPath, setPath } from '../paths';
 import type { VentHandle } from '../vent';
 import type { RhythmMachine } from '../rhythms';
 
-interface Ramp {
+export interface Ramp {
   param: string;
   from: number;
   to: number;
@@ -26,6 +26,7 @@ export interface EffectsHandle {
   /** advance active base-param ramps; call once per tick, before pharmacology */
   tickRamps(t: number, dt: number): void;
   serialize(): Ramp[];
+  restore(state: Ramp[]): void;
 }
 
 /** Default findings per view family, used when a script patches an absent view. */
@@ -150,5 +151,13 @@ export function createEffects(
     }
   }
 
-  return { apply, applyScriptAction, tickRamps, serialize: () => [...ramps] };
+  return {
+    apply,
+    applyScriptAction,
+    tickRamps,
+    serialize: () => [...ramps],
+    restore: (state) => {
+      ramps.splice(0, ramps.length, ...state);
+    },
+  };
 }

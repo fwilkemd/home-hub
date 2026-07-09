@@ -27,6 +27,7 @@ export interface PharmacologyHandle {
   applyBolus(drugId: string, dose: number): void;
   getCe(drugId: string): number;
   serialize(): Record<string, number>;
+  restore(ceByDrug: Record<string, number>): void;
 }
 
 export function createPharmacology(ctx: EngineCtx, rhythms: RhythmMachine): PharmacologyHandle {
@@ -116,6 +117,13 @@ export function createPharmacology(ctx: EngineCtx, rhythms: RhythmMachine): Phar
       const out: Record<string, number> = {};
       for (const [id, rt] of active) out[id] = rt.ce;
       return out;
+    },
+    restore: (ceByDrug) => {
+      active.clear();
+      for (const [id, ce] of Object.entries(ceByDrug)) {
+        const rt = runtimeFor(id);
+        if (rt) rt.ce = ce;
+      }
     },
   };
 }

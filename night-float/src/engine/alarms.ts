@@ -52,6 +52,7 @@ export interface AlarmsHandle {
   silenceAll(durationS?: number): void;
   getActive(): ActiveAlarm[];
   serialize(): Array<Pick<AlarmRecord, 'id' | 'raisedAt' | 'silencedUntil'>>;
+  restore(list: Array<Pick<AlarmRecord, 'id' | 'raisedAt' | 'silencedUntil'>>): void;
 }
 
 export function createAlarms(
@@ -61,6 +62,9 @@ export function createAlarms(
 ): AlarmsHandle {
   const active = new Map<string, AlarmRecord>();
   const pendingSince = new Map<string, number>();
+  /** save/load: alarms that were live at save time re-adopt their identity
+   * (raisedAt, silence window) without re-emitting AlarmRaised */
+  const restoredMeta = new Map<string, { raisedAt: number; silencedUntil: number }>();
 
   function monitorConditions(out: Condition[]): void {
     const configured = ctx.patient.devices.monitor.alarmLimits;
@@ -138,6 +142,18 @@ export function createAlarms(
         existing.clearSince = null;
         continue;
       }
+      const meta = restoredMeta.get(cond.id);
+      if (meta) {
+        restoredMeta.delete(cond.id);
+        active.set(cond.id, {
+          ...cond,
+          raisedAt: meta.raisedAt,
+          silencedUntil: meta.silencedUntil,
+          conditionTrue: true,
+          clearSince: null,
+        });
+        continue;
+      }
       const since = pendingSince.get(cond.id);
       if (since === undefined) {
         pendingSince.set(cond.id, t);
@@ -213,5 +229,9 @@ export function createAlarms(
         raisedAt: r.raisedAt,
         silencedUntil: r.silencedUntil,
       })),
+    restore: (list) => {
+      restoredMeta.clear();
+      for (const r of list) restoredMeta.set(r.id, r);
+    },
   };
 }

@@ -35,6 +35,7 @@ export interface LabsHandle {
   /** imaging goes straight to the queue at order time */
   orderImaging(orderId: string, study: 'cxr'): void;
   serialize(): { panels: PendingPanel[]; imaging: PendingImaging[] };
+  restore(state: { panels: PendingPanel[]; imaging: PendingImaging[] }): void;
 }
 
 function flagFor(test: LabTestDef, value: number): LabFlag {
@@ -165,5 +166,9 @@ export function createLabs(ctx: EngineCtx): LabsHandle {
     orderDrawn,
     orderImaging,
     serialize: () => ({ panels: [...panels], imaging: [...imaging] }),
+    restore: (state) => {
+      panels.splice(0, panels.length, ...state.panels);
+      imaging.splice(0, imaging.length, ...state.imaging);
+    },
   };
 }

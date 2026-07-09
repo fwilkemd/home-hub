@@ -4,13 +4,13 @@
  * This is the ONLY module that holds the EngineHandle.
  */
 import type { SimCommand } from '../contracts/commands';
-import type { DebriefData, EngineHandle, WorldHandle } from '../contracts/runtime';
+import type { DebriefData, EngineHandle, EngineSave, WorldHandle } from '../contracts/runtime';
 import type { ScreensHandle } from '../contracts/runtime';
 import type { TimeScale } from '../contracts/ids';
 import { getScenario, scenarios } from '../data/scenarios';
 import { createEngine } from '../engine';
 import { evaluateRubric } from '../engine/scenario/rubric';
-import { applySimEvent } from './apply-event';
+import { applySimEvent, replayLogIntoStore } from './apply-event';
 import { stashClipDataUrl } from './media';
 import { hubActions, hubStore } from './store';
 import { loadModules, type AppModules, type AudioHandle } from './modules';
@@ -48,7 +48,7 @@ export function listScenarios() {
 }
 
 // ================================================================ lifecycle
-export async function startScenario(id: string): Promise<void> {
+export async function startScenario(id: string, restore?: EngineSave): Promise<void> {
   const scenario = getScenario(id);
   if (!scenario) throw new Error(`Unknown scenario: ${id}`);
   stopSession();
@@ -64,12 +64,15 @@ export async function startScenario(id: string): Promise<void> {
   const queuedEvents: import('../contracts/events').SimEvent[] = [];
   let engineRef: EngineHandle | null = null;
   const engine = createEngine(scenario, {
+    restore,
     onEvent: (e) => {
       if (engineRef) applySimEvent(e, engineRef);
       else queuedEvents.push(e);
     },
   });
   engineRef = engine;
+  // resuming a save: rebuild the store's accumulated records from the log
+  if (restore) replayLogIntoStore(engine);
 
   const modules: AppModules = await loadModules();
 
@@ -265,7 +268,50 @@ function finishScenario(): void {
   getWorld()?.exitPointerLock();
 }
 
-// ================================================================ save/export
+// ================================================================ save/load
+const SAVE_KEY = 'nf-save';
+
+export function saveGame(): 'saved' | 'blocked' | 'failed' {
+  const engine = session?.engine;
+  if (!engine || engine.isEnded()) return 'blocked';
+  // in-flight procedures aren't serialized (see DECISIONS.md)
+  if (engine.getProcedureRuntime?.()) return 'blocked';
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(engine.serialize()));
+    return 'saved';
+  } catch {
+    return 'failed';
+  }
+}
+
+export function getSavedGame(): (EngineSave & { title: string; clockStart: string }) | null {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const save = JSON.parse(raw) as EngineSave;
+    if (save.version !== 1) return null;
+    const scenario = getScenario(save.scenarioId);
+    if (!scenario) return null;
+    return { ...save, title: scenario.title, clockStart: scenario.clockStart };
+  } catch {
+    return null;
+  }
+}
+
+export function clearSavedGame(): void {
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch {}
+}
+
+export async function loadSavedGame(): Promise<boolean> {
+  const save = getSavedGame();
+  if (!save) return false;
+  await startScenario(save.scenarioId, save);
+  return true;
+}
+
+// ================================================================ export
 export function exportLogJson(): string {
   const engine = session?.engine;
   const debrief = hubStore.getState().debrief;
