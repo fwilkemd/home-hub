@@ -4,7 +4,13 @@
  * This is the ONLY module that holds the EngineHandle.
  */
 import type { SimCommand } from '../contracts/commands';
-import type { DebriefData, EngineHandle, EngineSave, WorldHandle } from '../contracts/runtime';
+import type {
+  DebriefData,
+  EngineHandle,
+  EngineSave,
+  ProcedureRuntime,
+  WorldHandle,
+} from '../contracts/runtime';
 import type { ScreensHandle } from '../contracts/runtime';
 import type { TimeScale } from '../contracts/ids';
 import { getScenario, scenarios } from '../data/scenarios';
@@ -184,6 +190,28 @@ export function syncNow(): void {
   syncMirrors(true);
 }
 
+// The engine hands back the SAME mutable ProcedureRuntime object every call;
+// React selectors need a fresh reference exactly when something changed and a
+// stable one otherwise. Fingerprint-gate a clone.
+let procFingerprint = '';
+let procMirror: ProcedureRuntime | null = null;
+
+function mirrorProcedure(live: ProcedureRuntime | null): ProcedureRuntime | null {
+  if (!live) {
+    procFingerprint = '';
+    procMirror = null;
+    return null;
+  }
+  const fp = `${live.procedureId}|${live.startedAt}|${live.stepIndex}|${live.contaminated}|${live.steps
+    .map((s) => s.status[0])
+    .join('')}`;
+  if (fp !== procFingerprint || !procMirror) {
+    procFingerprint = fp;
+    procMirror = JSON.parse(JSON.stringify(live));
+  }
+  return procMirror;
+}
+
 function syncMirrors(includePatient: boolean): void {
   if (!session) return;
   const { engine } = session;
@@ -195,7 +223,7 @@ function syncMirrors(includePatient: boolean): void {
     ventWave: engine.getVentWave(),
     alarms: engine.getActiveAlarms(),
     breathPhase: engine.getBreathPhase(),
-    procedure: engine.getProcedureRuntime?.() ?? null,
+    procedure: mirrorProcedure(engine.getProcedureRuntime?.() ?? null),
     nurse: engine.getNurseView?.() ?? hubStore.getState().nurse,
     tutorial: engine.getTutorialView?.() ?? null,
     ...(includePatient

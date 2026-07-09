@@ -38,6 +38,7 @@ export function installTestApi(): void {
     closeWorkstation: () => hubActions.closeWorkstation(),
     openZoom: (device) => hubActions.openZoom(device),
     closeZoom: () => hubActions.closeZoom(),
+    openSitePicker: (procedureId) => hubActions.setSitePicker({ procedureId }),
   };
   window.__nf = api;
 }

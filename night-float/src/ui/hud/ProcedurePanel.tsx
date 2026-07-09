@@ -7,6 +7,7 @@
  */
 import { useHub } from '../../bridge/store';
 import { dispatch } from '../../bridge/session';
+import { useProcedure } from '../procedures/useProcedure';
 import { IconCaret, IconCheck, IconX } from '../icons';
 
 /** Determinate progress ring fed by the world E-hold gesture. */
@@ -33,7 +34,7 @@ function HoldRing({ progress }: { progress: number }) {
 }
 
 export function ProcedurePanel() {
-  const proc = useHub((s) => s.procedure);
+  const proc = useProcedure();
   const hold = useHub((s) => s.procedureHold);
   const pointerLocked = useHub((s) => s.pointerLocked);
   if (!proc) return null;

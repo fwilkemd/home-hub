@@ -288,6 +288,7 @@ export interface NfTestApi {
   closeWorkstation(): void;
   openZoom(device: DeviceId): void;
   closeZoom(): void;
+  openSitePicker(procedureId: string): void;
 }
 
 declare global {

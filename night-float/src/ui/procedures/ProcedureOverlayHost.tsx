@@ -8,16 +8,17 @@
  * procedure panel stay visible and clickable above the airway view.
  */
 import { useEffect, useRef, useState } from 'react';
-import { hubActions, hubStore, useHub } from '../../bridge/store';
+import { hubActions, hubStore } from '../../bridge/store';
 import { getEngine, getWorld } from '../../bridge/session';
 import {
   createLaryngoscopyPainter,
   type LaryngoscopyPainter,
 } from '../../screens/laryngoscopy';
 import { LaryngoscopyOverlay } from './LaryngoscopyOverlay';
+import { useProcedure } from './useProcedure';
 
 export function ProcedureOverlayHost() {
-  const proc = useHub((s) => s.procedure);
+  const proc = useProcedure();
   const active = proc ? (proc.steps[proc.stepIndex] ?? null) : null;
   const procKey = proc ? `${proc.procedureId}:${proc.startedAt}` : null;
 

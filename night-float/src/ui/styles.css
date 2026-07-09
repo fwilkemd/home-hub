@@ -1062,17 +1062,20 @@ h2.chart-oneliner { margin: 0 0 12px; font-size: 19px; font-weight: 650; }
   color: var(--dim);
 }
 
-/* laryngoscope view: transparent full-screen click-catcher (so stray clicks
-   can't re-grab pointer lock mid-slider) under the HUD in paint order */
+/* laryngoscope view, painted under the HUD. Hold steps: click-transparent so
+   the player can re-lock the pointer and hold E with the view up. Slider
+   steps (.slider): a full-screen click-catcher keeps stray clicks off the
+   world canvas so pointer lock can't steal the cursor mid-drag. */
 .laryng-veil {
   position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: auto;
+  pointer-events: none;
   animation: fadein 160ms ease;
 }
+.laryng-veil.slider { pointer-events: auto; }
 .laryng-frame {
   display: flex;
   flex-direction: column;
@@ -1081,6 +1084,7 @@ h2.chart-oneliner { margin: 0 0 12px; font-size: 19px; font-weight: 650; }
   background: var(--bg0);
   box-shadow: var(--shadow);
   overflow: hidden;
+  pointer-events: auto;
 }
 .laryng-canvas { display: block; width: min(896px, 62vw, 118vh); height: auto; background: #120708; }
 .laryng-controls {

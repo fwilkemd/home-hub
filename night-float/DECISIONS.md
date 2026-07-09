@@ -20,3 +20,11 @@ One-liners for calls the spec left open (SPEC §0).
 - **Stethoscope pickup** lives on the supply cart (no other diegetic source existed); probe/kits can be returned to their holsters.
 - **Procedure holds:** the HUD panel's [Complete step] button drives steps standalone (holds render an indeterminate ring); world-gesture holds can layer on later without contract changes.
 - **NIBP interval ± buttons dropped** from the monitor zoom (no clean command); Silence + NIBP-now shipped.
+- **`sustained` predicates take `graceS`:** brief sub-threshold lapses pause (not reset) stability clocks — physiologic noise must not make near-threshold end conditions unreachable.
+- **Procedure mirror:** the engine returns one mutable ProcedureRuntime; the bridge fingerprints it and clones only on change so React re-renders exactly when steps advance.
+- **Hold gestures:** E-hold progress is world-side (20 Hz to the store); a completed hold disarms until a fresh press so mirror lag can't leak into the next step. Panel buttons remain the accessible path.
+- **Sterile field:** gown/glove/drape-ish step completion arms it; contaminating interactions are player world-actions on non-patient targets, once per target. Consequences stay a medical-pass hook.
+- **Laryngoscopy good-depth band** (0.62–0.78 ≈ 21.4–23.4 cm at the lips) is a placeholder, tagged.
+- **Save/load is slice-level:** patient/log/clock/PK levels/lab queues/alarm identity/script+ramp state/RNG streams restore; in-flight nurse tasks and active procedures do not (saving is blocked mid-procedure); US clip images don't survive (the log stores media ids only); `sustained` accumulators re-arm.
+- **Audio autoplay:** the context self-arms one-time gesture listeners to resume; alarms compare `silencedUntil` against sim time.
+- **Test surface:** `window.__nf` gained `openZoom`/`openSitePicker`/`engineEnded` + synchronous mirror sync after `advanceSim` — headless frames are ~1 fps under SwiftShader and specs must not race the rAF loop.

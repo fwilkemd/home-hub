@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ProcedureRuntimeStep } from '../../contracts/runtime';
 import { dispatch } from '../../bridge/session';
+import { hubStore } from '../../bridge/store';
 import type { LaryngoscopyPainter } from '../../screens/laryngoscopy';
 import { IconX } from '../icons';
 
@@ -52,10 +53,14 @@ export function LaryngoscopyOverlay({
     return () => cancelAnimationFrame(raf);
   }, [painter]);
 
-  // Esc: close the view only — never abort. Capture beats the global handler.
+  // Esc: close the view only — never abort. Capture beats the global handler,
+  // but anything stacked ABOVE this view (workstation, zoom, radial,
+  // settings) keeps first claim on Esc, so only act with a clear stack.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return;
+      const s = hubStore.getState();
+      if (s.workstationOpen || s.zoomDevice !== null || s.radialOpen || s.settingsOpen) return;
       e.stopPropagation();
       onClose();
     };
@@ -70,7 +75,13 @@ export function LaryngoscopyOverlay({
   const inBand = depth >= TUBE_GOOD_LO && depth <= TUBE_GOOD_HI;
 
   return (
-    <div className="laryng-veil" onClick={(e) => e.stopPropagation()}>
+    // slider steps need the cursor: the veil then swallows stray clicks so
+    // the world canvas can't grab pointer lock mid-drag. On hold steps it is
+    // click-transparent so the player can re-lock and hold E with the view up.
+    <div
+      className={`laryng-veil ${sliderStep ? 'slider' : ''}`}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="laryng-frame">
         <div className="zoom-title">
           <strong>Laryngoscope</strong>
