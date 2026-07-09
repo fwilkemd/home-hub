@@ -24,7 +24,8 @@ export const BED = {
 export const PATIENT = {
   hip: new THREE.Vector3(0.85, 0.8, -1.42),
   inclineRad: 0.436, // ~25 deg head-up
-  mouthWorld: new THREE.Vector3(0.85, 1.17, -1.9),
+  /** where the lips land after the incline — ETT + vent circuit meet here */
+  mouthWorld: new THREE.Vector3(0.85, 1.22, -1.95),
 };
 
 // ---------------------------------------------------------------- screens
@@ -120,7 +121,7 @@ export function getViewpoint(v: ViewpointId): Viewpoint {
     case 'vent':
       return screenViewpoint('vent', 0.5);
     case 'ultrasound':
-      return screenViewpoint('us_machine', 0.52);
+      return screenViewpoint('us_machine', 0.45);
     case 'wide':
       return { pos: new THREE.Vector3(-2.72, 1.78, 2.18), look: new THREE.Vector3(1.0, 0.85, -1.55) };
   }

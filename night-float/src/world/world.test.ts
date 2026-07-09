@@ -114,6 +114,54 @@ describe('createWorld', () => {
   });
 });
 
+describe('performance budget', () => {
+  it('stays under the ~300 draw call target (SPEC §14)', async () => {
+    const deps = makeDeps();
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(68, 16 / 9, 0.05, 30);
+    scene.add(camera);
+    const ctx: WorldCtx = {
+      scene,
+      camera,
+      deps,
+      reg: new InteractableRegistry(),
+      screens: new ScreenRig(),
+      clock: { t: 0 },
+    };
+    const [structure, lighting, headwall, bed, furniture, monitor, vent, ivpole, us] =
+      await Promise.all([
+        import('./room/structure'),
+        import('./room/lighting'),
+        import('./room/headwall'),
+        import('./room/bed'),
+        import('./room/furniture'),
+        import('./devices/monitor'),
+        import('./devices/vent'),
+        import('./devices/ivpole'),
+        import('./devices/ultrasound'),
+      ]);
+    structure.buildStructure(ctx);
+    lighting.buildLighting(ctx);
+    headwall.buildHeadwall(ctx);
+    bed.buildBed(ctx);
+    furniture.buildFurniture(ctx);
+    monitor.buildMonitor(ctx);
+    vent.buildVent(ctx);
+    ivpole.buildIvPole(ctx);
+    us.buildUltrasound(ctx);
+    buildPatient(ctx);
+    const { createNurse } = await import('./npc/nurse');
+    createNurse(ctx);
+
+    let drawables = 0;
+    scene.traverse((o) => {
+      if (((o as THREE.Mesh).isMesh || (o as THREE.Sprite).isSprite) && o.visible) drawables++;
+    });
+    expect(drawables).toBeGreaterThan(50); // sanity: the room actually built
+    expect(drawables).toBeLessThan(300);
+  });
+});
+
 describe('probe snapping', () => {
   it('dispatches UsSetView for the nearest anchor and clears when far', () => {
     const deps = makeDeps();
