@@ -36,6 +36,8 @@ export function installTestApi(): void {
     },
     openWorkstation: (tab?: EmrTab) => hubActions.openWorkstation(tab),
     closeWorkstation: () => hubActions.closeWorkstation(),
+    openZoom: (device) => hubActions.openZoom(device),
+    closeZoom: () => hubActions.closeZoom(),
   };
   window.__nf = api;
 }

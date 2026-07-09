@@ -183,6 +183,10 @@ export function applySimEvent(e: SimEvent, engine: EngineHandle): void {
         lastExam: { zone: e.zone, mode: e.mode, text: e.findingsText, untilReal: Date.now() + 9000 },
       });
       break;
+    case 'UsViewChanged':
+      // the US screen renders store.us.activeView — mirror the engine's view
+      hubStore.setState((s) => ({ us: { ...s.us, activeView: e.view } }));
+      break;
     case 'UsClipSaved': {
       const dataUrl = takeClipDataUrl();
       if (dataUrl) {

@@ -284,6 +284,8 @@ export interface NfTestApi {
   };
   openWorkstation(tab?: EmrTab): void;
   closeWorkstation(): void;
+  openZoom(device: DeviceId): void;
+  closeZoom(): void;
 }
 
 declare global {
