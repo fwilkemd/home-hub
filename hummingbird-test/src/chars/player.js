@@ -1,13 +1,13 @@
 import * as THREE from 'three'
 import { heightAt } from '../world/terrain.js'
-import { Figure } from './figure.js'
+import { Character } from './rig.js'
 
 const WALK = 2.3, RUN = 4.9, WINDED = 1.3
 
 export class Player {
-  constructor(scene, input, camera) {
+  constructor(scene, input, camera, rig) {
     this.input = input; this.camera = camera
-    this.fig = new Figure({ top: '#2e2a33', bottom: '#5e5a3e', hair: '#1c1512', skin: '#d2ad8c' })
+    this.fig = new Character(rig, { body: '#2b262d', joints: '#141116' })
     this.obj = this.fig.root
     scene.add(this.obj)
     this.pos = new THREE.Vector3(0, 0, 0)

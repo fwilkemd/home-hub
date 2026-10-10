@@ -1,10 +1,10 @@
 import * as THREE from 'three'
 import { heightAt } from '../world/terrain.js'
-import { Figure } from './figure.js'
+import { Character } from './rig.js'
 
 export class Jay {
-  constructor(scene) {
-    this.fig = new Figure({ dress: '#2d6fb0', hair: '#6b4a2e', skin: '#e3bf9b', barefoot: true, hairLong: true, scale: 1.03 })
+  constructor(scene, rig) {
+    this.fig = new Character(rig, { body: '#2d6fb0', joints: '#17395c', scale: 1.02 })
     this.obj = this.fig.root
     scene.add(this.obj)
     this.pos = new THREE.Vector3(); this.yaw = 0

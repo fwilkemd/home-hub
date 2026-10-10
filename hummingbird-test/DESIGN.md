@@ -49,6 +49,26 @@ branching, "Again."** → dusk, golf, "I'm unhappy" → up creek, light running 
 white alleyway, "given two choices" → fall → **nestling: fire** → moonstruck creek → (after) the
 riparian patch, melody both ways.
 
+## Rendering
+
+Rockstar's engine is proprietary and was not touched. What RDR2 does on screen is, however, well
+documented (frame studies, GDC talks), and the prototype rebuilds the same stack on the web:
+
+| RDR2 technique | here |
+| --- | --- |
+| physically based materials, image-based lighting | MeshStandard / Physical materials; the sky is rendered to a PMREM environment map every time of day changes |
+| atmospheric sky, time of day | Preetham sky (Three.js `Sky`), sun → moon handoff, stars, a cloud layer, lens flare |
+| cascaded shadow maps | one 4k soft shadow map following the player (CSM is the obvious next step) |
+| terrain layers | splat material: grass / dirt / sand / rock albedo + normal maps blended per vertex, macro variation to kill tiling |
+| grass with wind and shadows | 220k instanced textured blades: gust noise, trampling, trodden trail, shadow sampling, back-lighting, distance LOD |
+| trees | leaf-card canopies with alpha test and sway; bark normal maps |
+| water | planar reflection with distortion for the pond; normal-mapped creek with moon glints |
+| volumetric fog / god rays | depth-reconstructed height fog with sun in-scatter; screen-space god rays from the sun disc |
+| SSAO, bloom, DOF, film look | postprocessing: SSAO, bloom, depth of field focused on Ananelia (tighter in dialogue), vignette, grain, AgX tone mapping |
+
+What this is not yet: real character art (the mannequin is a Mixamo rig with idle / walk / run and
+layered poses), scanned textures (ground and bark are generated), volumetric clouds, TAA.
+
 ## What was "reverse engineered"
 
 Not code. Rockstar's engine and content are proprietary and were not touched. What was studied is

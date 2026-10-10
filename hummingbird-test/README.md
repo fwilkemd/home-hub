@@ -5,8 +5,11 @@ You play Ananelia across one day in the hidden meadow: the car at the wood's edg
 trail, the pond, the argument at the butterfly weed, the episode, the oak, the frog, golf at dusk,
 the bramble, the white alleyway, and the moonstruck creek. Between beats you are the nestling.
 
-Everything on screen is a stand-in: procedural meadow, primitive figures, no audio. The structure,
-the text, and the feel are what this prototype is testing.
+The rendering is a real-time pipeline in the spirit of a modern open-world game (see DESIGN.md,
+"Rendering"): physically based materials, image-based lighting from a physical sky, soft shadows,
+textured wind-blown grass that takes shadows, leaf-card trees, a planar-reflection pond, and a
+post-processing stack (ambient occlusion, height fog with sun scatter, bloom, depth of field, god
+rays, film grain, AgX tone mapping). Characters are a rigged, animated mannequin for now. No audio.
 
 ## Run it
 
@@ -32,7 +35,8 @@ Open the printed URL in Chrome/Edge/Firefox on a machine with a real GPU. Click 
 URL switches for testing:
 
 - `?beat=dusk` start at a beat: `car trail weed oak frog dusk bramble alley moon`
-- `?lite` fewer grass blades, no shadows (laptops, headless)
+- `?lite` fewer grass blades, no shadows, no SSAO / DOF / god rays (laptops, headless)
+- `?nopost` plain forward render, no post-processing at all
 - `?fast` shortens scripted waits
 
 A debug handle is on `window.__hb` (for example `__hb.player.setPosition(-75, 70)` teleports).
@@ -40,15 +44,19 @@ A debug handle is on `window.__hb` (for example `__hb.player.setPosition(-75, 70
 ## Where things live
 
 ```
-src/main.js              boot, render loop, pause
-src/quality.js           ?lite / ?beat switches
-src/world/terrain.js     the map: landmark positions (L), the trail, the creek, heightAt()
-src/world/sky.js         time of day presets, sun, fog, rain
-src/world/grass.js       instanced grass with wind, trodden trail, trampling; flowers
-src/world/flora.js       the oak, the wood, mountains, bramble
-src/world/water.js       pond and creek shader
+src/main.js              boot, asset loading, render loop, pause
+src/post.js              post-processing stack (SSAO, height fog, DOF, god rays, bloom, grain, tone map)
+src/quality.js           ?lite / ?beat / ?nopost switches
+src/world/textures.js    texture loader and the shared wind sway for leaf cards
+public/assets/           textures (generated + CC0), the rigged mannequin, water normals
+src/world/terrain.js     the map: landmark positions (L), the trail, the creek, heightAt(), splat material
+src/world/sky.js         time of day presets, physical sky + IBL, sun/moon, clouds, stars, lens flare, rain
+src/world/grass.js       instanced textured grass (wind, shadows, translucency, LOD, trampling); flowers
+src/world/flora.js       leaf-card trees, the oak, mountains, bramble
+src/world/water.js       reflective pond and the creek
 src/world/props.js       car, golf bag, balls, frog, leaf
-src/chars/figure.js      the primitive humanoid and its poses
+src/chars/rig.js         the rigged mannequin: locomotion clips + layered static poses
+src/chars/figure.js      the old primitive humanoid (still used for the alley statue)
 src/chars/player.js      third-person controller, stamina, camera
 src/chars/jay.js         Jay: paths, poses, golf swing
 src/chars/hummingbird.js the golden flit
