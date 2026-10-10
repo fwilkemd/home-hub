@@ -1,0 +1,142 @@
+/* ---------- tokens ---------- */
+:root {
+  --ink: #f4efe6;
+  --ink-dim: rgba(244, 239, 230, 0.68);
+  --ink-faint: rgba(244, 239, 230, 0.4);
+  --gold: #e7c36a;
+  --ocean: #2d6fb0;
+  --paper: #efe6d2;
+  --paper-ink: #2a2118;
+  --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --body: 'Inter', system-ui, sans-serif;
+  --mono: 'Space Mono', ui-monospace, monospace;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #0b0a0c; overflow: hidden; font-family: var(--body); color: var(--ink); }
+canvas#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.key {
+  display: inline-block; font-family: var(--mono); font-size: 0.72em; letter-spacing: 0.04em;
+  border: 1px solid var(--ink-faint); border-radius: 4px; padding: 1px 7px; margin: 0 0.4em 0 0; color: var(--ink);
+  text-transform: uppercase; vertical-align: 1px;
+}
+
+/* ---------- letterbox ---------- */
+.letterbox .bar { position: fixed; left: 0; right: 0; height: 0; background: #000; transition: height 0.9s var(--ease); z-index: 20; }
+.letterbox .bar.top { top: 0; } .letterbox .bar.bottom { bottom: 0; }
+.letterbox.on .bar { height: 9vh; }
+
+/* ---------- vision overlays ---------- */
+.vision {
+  position: fixed; inset: 0; z-index: 25; pointer-events: none; opacity: 0;
+  transition: opacity 1.4s var(--ease);
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.85) 70%),
+    linear-gradient(90deg, rgba(0,0,0,0) 48%, rgba(0,0,0,0.96) 52%);
+}
+.vision.half { opacity: 1; }
+.vision.black { opacity: 1; background: #000; transition: opacity 0.6s var(--ease); }
+.vision.white { opacity: 1; background: #fbf7ee; transition: opacity 1.2s var(--ease); }
+.vision.dim { opacity: 1; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.7) 100%); }
+.scratches {
+  position: fixed; inset: 0; z-index: 24; pointer-events: none; opacity: 0; transition: opacity 0.5s;
+  background: radial-gradient(ellipse at 50% 60%, rgba(0,0,0,0) 45%, rgba(90, 10, 10, 0.55) 100%);
+}
+.scratches.on { opacity: 1; }
+.fade { position: fixed; inset: 0; background: #000; z-index: 40; opacity: 1; pointer-events: none; transition: opacity 1.6s var(--ease); }
+.fade.clear { opacity: 0; }
+.fade.fast { transition-duration: 0.4s; }
+
+/* ---------- HUD ---------- */
+.hud { position: fixed; inset: 0; z-index: 30; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
+.hud.on { opacity: 1; }
+.objective { position: absolute; top: 4.5vh; left: 3.6vw; max-width: 34vw; opacity: 0; transform: translateY(-6px); transition: all 0.7s var(--ease); }
+.objective.on { opacity: 1; transform: none; }
+.objective-kicker { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.35rem; }
+.objective-text { font-family: var(--display); font-weight: 300; font-size: 1.55rem; line-height: 1.2; text-shadow: 0 1px 12px rgba(0,0,0,0.6); }
+.stamina { position: absolute; left: 3.6vw; bottom: 6vh; width: 11vw; height: 3px; background: rgba(255,255,255,0.18); opacity: 0; transition: opacity 0.4s; }
+.stamina.on { opacity: 1; }
+.stamina-fill { height: 100%; width: 100%; background: var(--ink); transition: width 0.1s linear; }
+.stamina.burning .stamina-fill { background: #e07a5f; }
+.light-left { position: absolute; right: 3.6vw; top: 4.5vh; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim); opacity: 0; transition: opacity 0.6s; text-align: right; }
+.light-left.on { opacity: 1; }
+.prompt { position: absolute; left: 50%; bottom: 12vh; transform: translateX(-50%) translateY(4px); font-size: 0.95rem; letter-spacing: 0.02em; opacity: 0; transition: all 0.25s var(--ease); white-space: nowrap; text-shadow: 0 1px 8px rgba(0,0,0,0.7); }
+.prompt.on { opacity: 1; transform: translateX(-50%); }
+.hint { position: absolute; left: 50%; bottom: 7vh; transform: translateX(-50%); font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); opacity: 0; transition: opacity 0.5s; }
+.hint.on { opacity: 1; }
+
+/* ---------- dialogue ---------- */
+.dialogue { position: fixed; left: 50%; bottom: 11vh; transform: translateX(-50%); width: min(62vw, 900px); z-index: 31; opacity: 0; pointer-events: none; transition: opacity 0.4s var(--ease); text-align: center; }
+.dialogue.on { opacity: 1; }
+.speaker { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.55rem; }
+.speaker.inner { color: var(--ink-faint); }
+.line { font-family: var(--display); font-weight: 300; font-size: 1.7rem; line-height: 1.3; text-shadow: 0 2px 18px rgba(0,0,0,0.75); }
+.line.inner { font-style: italic; color: var(--ink-dim); }
+.choices { margin-top: 1.2rem; display: flex; flex-direction: column; gap: 0.45rem; align-items: center; }
+.choice { font-family: var(--body); font-size: 1rem; color: var(--ink-dim); padding: 0.3rem 0.9rem; border-left: 1px solid transparent; transition: all 0.2s; }
+.choice .n { font-family: var(--mono); color: var(--gold); margin-right: 0.7em; font-size: 0.75rem; }
+.choice.venom { color: #e8a08f; }
+.choice:hover, .choice.focus { color: var(--ink); border-left-color: var(--gold); }
+.continue { margin-top: 1rem; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); opacity: 0; transition: opacity 0.4s; }
+.continue.on { opacity: 1; }
+.dialogue.on .choice { pointer-events: auto; cursor: pointer; }
+
+/* ---------- interlude (you are a hummingbird) ---------- */
+.interlude { position: fixed; inset: 0; z-index: 32; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 1.2s var(--ease); padding: 0 18vw; text-align: center; }
+.interlude.on { opacity: 1; }
+.interlude-text { font-family: var(--display); font-weight: 300; font-style: italic; font-size: 1.75rem; line-height: 1.45; color: var(--ink); text-shadow: 0 2px 30px rgba(0,0,0,0.5); max-width: 46ch; }
+.interlude-text b { font-style: normal; font-weight: 500; color: var(--gold); }
+.interlude-continue { margin-top: 2rem; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-faint); opacity: 0; transition: opacity 0.5s; }
+.interlude-continue.on { opacity: 1; }
+
+/* ---------- journal ---------- */
+.journal { position: fixed; inset: 0; z-index: 35; background: rgba(8, 6, 10, 0.72); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.4s var(--ease); }
+.journal.on { opacity: 1; pointer-events: auto; }
+.journal-book { width: min(78vw, 1100px); height: min(78vh, 720px); background: var(--paper); color: var(--paper-ink); border-radius: 4px; box-shadow: 0 40px 120px rgba(0,0,0,0.7), inset 0 0 120px rgba(120, 90, 50, 0.18); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+.journal-tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(42,33,24,0.2); }
+.journal-tabs button { background: none; border: 0; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 1rem 1.6rem; color: rgba(42,33,24,0.5); cursor: pointer; }
+.journal-tabs button.active { color: var(--paper-ink); border-bottom: 2px solid var(--paper-ink); }
+.journal-page { padding: 2.4rem 3.2rem; overflow-y: auto; font-family: var(--display); font-size: 1.05rem; line-height: 1.55; }
+.journal-page h3 { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(42,33,24,0.55); margin: 0 0 1rem; font-weight: 400; }
+.journal-page .hand { font-style: italic; white-space: pre-wrap; }
+.journal-page .doc { font-family: var(--body); font-size: 0.93rem; line-height: 1.6; white-space: pre-wrap; }
+.journal-page .doc .sig { display: block; margin-top: 1rem; font-style: italic; }
+.journal-page .empty { color: rgba(42,33,24,0.5); font-style: italic; }
+.journal-page .leaves { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4rem; }
+.journal-page .leaf { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 0.4rem; }
+.journal-page .leaf svg { width: 70%; height: 70%; }
+.journal-page .leaf span { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(42,33,24,0.55); }
+.journal-foot { border-top: 1px solid rgba(42,33,24,0.2); padding: 0.8rem 1.6rem; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(42,33,24,0.5); display: flex; justify-content: space-between; }
+.journal .key { border-color: rgba(42,33,24,0.4); color: var(--paper-ink); }
+
+/* ---------- title / chapter / pause ---------- */
+.title { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: radial-gradient(ellipse at 50% 80%, #1a1710 0%, #0b0a0c 70%); cursor: pointer; transition: opacity 1.4s var(--ease); }
+.title.off { opacity: 0; pointer-events: none; }
+.title-eyebrow { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 1.2rem; }
+.title-main { font-family: var(--display); font-weight: 300; font-size: clamp(3rem, 7vw, 6rem); letter-spacing: -0.01em; line-height: 1; color: var(--ink); }
+.title-sub { font-family: var(--display); font-style: italic; font-weight: 300; font-size: 1.3rem; color: var(--gold); margin-top: 1rem; }
+.title-quote { max-width: 48ch; margin-top: 3rem; font-family: var(--display); font-weight: 300; font-style: italic; font-size: 1rem; line-height: 1.55; color: var(--ink-dim); }
+.title-quote span { font-style: normal; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); }
+.title-cta { margin-top: 3rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink); animation: pulse 2.4s ease-in-out infinite; }
+.title-controls { position: absolute; bottom: 5vh; display: flex; gap: 2rem; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.title-controls b { color: var(--ink-dim); font-weight: 400; margin-right: 0.4em; }
+@keyframes pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+
+.chapter { position: fixed; inset: 0; z-index: 45; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 1.2s var(--ease); text-align: center; }
+.chapter.on { opacity: 1; }
+.chapter-kicker { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+.chapter-text { font-family: var(--display); font-weight: 300; font-style: italic; font-size: clamp(1.8rem, 3.4vw, 3rem); color: var(--ink); text-shadow: 0 2px 30px rgba(0,0,0,0.8); }
+
+.pause { position: fixed; inset: 0; z-index: 48; display: flex; align-items: center; justify-content: center; background: rgba(8,6,10,0.6); backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity 0.3s; cursor: pointer; }
+.pause.on { opacity: 1; pointer-events: auto; }
+.pause-box { text-align: center; max-width: 60ch; }
+.pause-title { font-family: var(--display); font-weight: 300; font-size: 2.6rem; margin-bottom: 1.4rem; }
+.pause-row { font-size: 0.92rem; color: var(--ink-dim); margin: 0.45rem 0; }
+.pause-row b { color: var(--ink); font-weight: 500; }
+.pause-row.dim { color: var(--ink-faint); font-size: 0.82rem; margin-top: 1.4rem; }
+.pause-cta { margin-top: 1.8rem; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.26em; text-transform: uppercase; animation: pulse 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation: none !important; }
+}

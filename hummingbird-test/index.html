@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Hummingbird Test — prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@400;500&family=Space+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/ui/styles.css" />
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+
+    <!-- Cinematic letterbox -->
+    <div id="letterbox" class="letterbox"><div class="bar top"></div><div class="bar bottom"></div></div>
+
+    <!-- Vision / episode overlays -->
+    <div id="vision" class="vision"></div>
+    <div id="scratches" class="scratches"></div>
+    <div id="fade" class="fade"></div>
+
+    <!-- HUD -->
+    <div id="hud" class="hud">
+      <div class="objective" id="objective">
+        <div class="objective-kicker" id="objective-kicker"></div>
+        <div class="objective-text" id="objective-text"></div>
+      </div>
+      <div class="stamina" id="stamina"><div class="stamina-fill" id="stamina-fill"></div></div>
+      <div class="light-left" id="light-left"></div>
+      <div class="prompt" id="prompt"><span class="key" id="prompt-key">E</span><span id="prompt-text"></span></div>
+      <div class="hint" id="hint"></div>
+    </div>
+
+    <!-- Dialogue -->
+    <div id="dialogue" class="dialogue">
+      <div class="speaker" id="dlg-speaker"></div>
+      <div class="line" id="dlg-line"></div>
+      <div class="choices" id="dlg-choices"></div>
+      <div class="continue" id="dlg-continue">continue <span class="key">space</span></div>
+    </div>
+
+    <!-- Interlude text (hummingbird) -->
+    <div id="interlude" class="interlude">
+      <div class="interlude-text" id="interlude-text"></div>
+      <div class="interlude-continue" id="interlude-continue">press <span class="key">space</span></div>
+    </div>
+
+    <!-- Journal -->
+    <div id="journal" class="journal">
+      <div class="journal-book">
+        <div class="journal-tabs">
+          <button data-tab="journal" class="active">Journal</button>
+          <button data-tab="ledger">Ledger</button>
+          <button data-tab="leaves">Leaves</button>
+        </div>
+        <div class="journal-page" id="journal-page"></div>
+        <div class="journal-foot">close <span class="key">J</span> · <span id="journal-nav">← → pages</span></div>
+      </div>
+    </div>
+
+    <!-- Title / chapter cards -->
+    <div id="title" class="title">
+      <div class="title-eyebrow">a prototype of</div>
+      <div class="title-main">The Hummingbird Test</div>
+      <div class="title-sub" id="title-sub">Act 1 — of mountains &amp; meadows</div>
+      <div class="title-quote">
+        “A fiery light of exceeding brilliance came and permeated my whole brain…not like a burning,
+        but like a warming flame, as the sun warms anything its rays touch.”<br /><span>— Hildegard of Bingen, Scivias</span>
+      </div>
+      <div class="title-cta" id="title-cta">click to begin</div>
+      <div class="title-controls">
+        <span><b>W A S D</b> walk</span><span><b>shift</b> run</span><span><b>mouse</b> look</span>
+        <span><b>E</b> interact</span><span><b>J</b> journal</span><span><b>esc</b> pause</span>
+      </div>
+    </div>
+
+    <div id="chapter" class="chapter"><div class="chapter-kicker" id="chapter-kicker"></div><div class="chapter-text" id="chapter-text"></div></div>
+
+    <div id="pause" class="pause">
+      <div class="pause-box">
+        <div class="pause-title">Paused</div>
+        <div class="pause-row"><b>W A S D</b> walk · <b>shift</b> run (lungs burn) · <b>mouse</b> look</div>
+        <div class="pause-row"><b>E</b> interact · <b>J</b> journal &amp; ledger · <b>space</b> advance dialogue</div>
+        <div class="pause-row"><b>1 2 3</b> choose · <b>esc</b> resume</div>
+        <div class="pause-row dim">The whole of this is mock: placeholder figures, procedural meadow, no audio yet. The story beats are Act 1's.</div>
+        <div class="pause-cta">click to resume</div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
